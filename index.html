@@ -1,0 +1,2750 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Body Master - Sistema Operativo y ERP Integral</title>
+    <!-- Chart.js para estadísticas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF y html2canvas para generación de PDFs reales -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #131826;
+            --bg-sidebar: #0f1423;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-green: #10b981;
+            --text-main: #ffffff;
+            --text-muted: #9ca3af;
+            --border-color: #1f293d;
+            --table-th-bg: #0b0f19;
+            --receipt-bg: #ffffff;
+            --receipt-text: #000000;
+            --receipt-border: #333333;
+        }
+
+        /* Tema Claro */
+        body.light-theme {
+            --bg-main: #f3f4f6;
+            --bg-card: #ffffff;
+            --bg-sidebar: #e5e7eb;
+            --accent-orange: #d97706;
+            --accent-red: #dc2626;
+            --accent-green: #059669;
+            --text-main: #111827;
+            --text-muted: #4b5563;
+            --border-color: #d1d5db;
+            --table-th-bg: #e5e7eb;
+            --receipt-bg: #ffffff;
+            --receipt-text: #000000;
+            --receipt-border: #9ca3af;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Pantalla de Login y Registro */
+        #auth-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 15px;
+        }
+
+        .auth-card {
+            background-color: var(--bg-card);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            width: 400px;
+            max-width: 100%;
+            text-align: center;
+        }
+
+        .auth-card h2 {
+            color: var(--accent-orange);
+            margin-bottom: 5px;
+            font-size: 1.4rem;
+        }
+
+        .auth-card p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-bottom: 20px;
+        }
+
+        .auth-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .auth-group label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .auth-group input, .auth-group select {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 10px;
+            background: var(--accent-orange);
+            color: #000;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .auth-links {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .auth-links a {
+            color: var(--accent-orange);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Layout Principal */
+        #app-layout {
+            display: none;
+            min-height: 100vh;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Botón Menú Hamburguesa para Móvil */
+        .mobile-header-bar {
+            display: none;
+            background-color: var(--bg-sidebar);
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            width: 100%;
+        }
+
+        .hamburger-btn {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Contenedor flex para Sidebar + Main en Desktop */
+        .desktop-wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Operativo */
+        aside {
+            width: 260px;
+            min-width: 260px;
+            background-color: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            border-right: 1px solid var(--border-color);
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            transition: transform 0.3s ease;
+            z-index: 1100;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--accent-orange);
+            margin-bottom: 30px;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+            max-height: calc(100vh - 220px);
+            padding-right: 5px;
+        }
+
+        .nav-links::-webkit-scrollbar { width: 4px; }
+        .nav-links::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+        .nav-links li a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-links li.active a, .nav-links li a:hover {
+            background-color: var(--accent-orange);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .sidebar-footer {
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .sidebar-footer h4 {
+            font-size: 0.8rem;
+            color: var(--accent-orange);
+            margin-bottom: 2px;
+            word-break: break-all;
+        }
+
+        .sidebar-footer p {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .theme-toggle-btn {
+            background: var(--bg-main);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+
+        .theme-toggle-btn:hover {
+            border-color: var(--accent-orange);
+        }
+
+        /* Main Content Layout */
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            width: 100%;
+            min-width: 0; /* Previene desbordamiento en flex/grid */
+        }
+
+        .section-view {
+            display: none;
+            grid-column: 1 / -1;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .section-view.active-view { display: grid; }
+
+        .full-width-view {
+            display: none;
+            grid-column: 1 / -1;
+            width: 100%;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .full-width-view.active-view { display: flex; }
+
+        .dashboard-left {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .welcome-banner {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .welcome-banner h1 { font-size: 1.3rem; margin-bottom: 5px; word-break: break-word; }
+        .welcome-banner p { color: var(--text-muted); font-size: 0.8rem; }
+
+        /* Metrics Row */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            width: 100%;
+        }
+
+        .metric-card {
+            background-color: var(--bg-card);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            min-width: 0;
+        }
+
+        .metric-card .header-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .metric-card span { color: var(--text-muted); font-size: 0.75rem; }
+        .metric-card h3 { font-size: 1.4rem; word-break: break-all; }
+        .metric-card .sub-text { font-size: 0.7rem; color: var(--text-muted); margin-top: 5px; }
+
+        /* Analytics & Inventory Row */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .widget-box {
+            background-color: var(--bg-card);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            min-width: 0;
+        }
+
+        .widget-box h3 {
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* Quick Actions Panel */
+        .quick-actions {
+            background-color: var(--bg-card);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .action-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+            background: none;
+            border: none;
+            flex: 1;
+            min-width: 90px;
+        }
+
+        .action-item:hover { color: var(--accent-orange); }
+
+        .action-icon {
+            width: 35px;
+            height: 35px;
+            background-color: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        /* Right Column Widgets */
+        .dashboard-right {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            gap: 10px;
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-orange);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+        }
+
+        .badge-neutral {
+            background: rgba(156, 163, 175, 0.2);
+            color: var(--text-muted);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            border: 1px dashed var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* Tablas de Módulos */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            min-width: 600px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            color: var(--text-muted);
+            background: var(--table-th-bg);
+        }
+
+        /* Directorio de Archivos */
+        .clientes-grid-archivo {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .cliente-card-archivo {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cliente-card-archivo:hover {
+            border-color: var(--accent-orange);
+            transform: translateY(-2px);
+        }
+
+        /* Modales Extensos */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            padding: 25px;
+            border-radius: 12px;
+            width: 550px;
+            max-width: 100%;
+            border: 1px solid var(--border-color);
+            max-height: 90vh;
+            overflow-y: auto;
+            color: var(--text-main);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            color: var(--accent-orange);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .form-group.full { grid-column: span 2; }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .modal-content input, .modal-content select, .modal-content textarea, .search-bar-input {
+            width: 100%;
+            padding: 9px;
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        /* Estilos del desplegable Autocomplete */
+        .autocomplete-container { position: relative; }
+
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 4000;
+            display: none;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.5);
+            margin-top: 4px;
+        }
+
+        .autocomplete-item {
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+
+        .autocomplete-item:hover {
+            background-color: var(--border-color);
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .btn-primary { background: var(--accent-orange); color: #000; }
+        .btn-secondary { background: var(--border-color); color: var(--text-main); }
+        .btn-danger { background: var(--accent-red); color: #fff; }
+        .btn-success { background: var(--accent-green); color: #fff; }
+
+        /* --- RESPONSIVIDAD PARA CELULARES Y TABLETS --- */
+        @media (max-width: 992px) {
+            .desktop-wrapper {
+                flex-direction: column;
+            }
+            .mobile-header-bar {
+                display: flex;
+            }
+            aside {
+                position: fixed;
+                left: -260px;
+                top: 0;
+                height: 100vh;
+                transition: transform 0.3s ease;
+                z-index: 1200;
+                box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+            }
+            aside.mobile-open {
+                transform: translateX(260px);
+            }
+            main {
+                grid-template-columns: 1fr;
+                padding: 15px;
+            }
+            .section-view {
+                grid-template-columns: 1fr;
+            }
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+            #contenedor-planes {
+                grid-template-columns: 1fr !important;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .form-group.full {
+                grid-column: span 1;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            .auth-card {
+                padding: 20px 15px;
+            }
+            .welcome-banner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        /* Impresión limpia del recibo */
+        @media print {
+            body * { visibility: hidden; }
+            #recibo-imprimir-area, #recibo-imprimir-area * { visibility: visible; }
+            #recibo-imprimir-area { position: absolute; left: 0; top: 0; width: 100%; color: #000 !important; background: #fff !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA DE AUTENTICACIÓN -->
+    <div id="auth-screen">
+        <div class="auth-card" id="form-login">
+            <h2>⚡ GYM BODY MASTER</h2>
+            <p>Acceso Seguro al Sistema Operativo</p>
+            <div class="auth-group">
+                <label>Usuario</label>
+                <input type="text" id="login-user" placeholder="Tu usuario registrado">
+            </div>
+            <div class="auth-group">
+                <label>Contraseña</label>
+                <input type="password" id="login-pass" placeholder="••••••••">
+            </div>
+            <button class="auth-btn" onclick="intentarLogin()">Iniciar Sesión</button>
+            <div class="auth-links">
+                <a onclick="mostrarFormAuth('register')">Solicitar Registro Nuevo Empleado</a>
+                <a onclick="mostrarFormAuth('forgot')">¿Olvidaste tu contraseña?</a>
+            </div>
+        </div>
+
+        <div class="auth-card" id="form-register" style="display: none;">
+            <h2>📝 Registro de Empleado</h2>
+            <p>Tu cuenta requerirá aprobación previa del Administrador Principal</p>
+            <div class="auth-group">
+                <label>Usuario Deseado</label>
+                <input type="text" id="reg-user" placeholder="Ej: carlosperez">
+            </div>
+            <div class="auth-group">
+                <label>Correo Electrónico Registrado</label>
+                <input type="email" id="reg-email" placeholder="correo@ejemplo.com">
+            </div>
+            <div class="auth-group">
+                <label>Rol Deseado</label>
+                <select id="reg-rol">
+                    <option value="Empleado / Cajero">Empleado / Cajero</option>
+                    <option value="Administrador">Administrador</option>
+                </select>
+            </div>
+            <div class="auth-group">
+                <label>Contraseña</label>
+                <input type="password" id="reg-pass" placeholder="Crea tu contraseña">
+            </div>
+            <button class="auth-btn" onclick="solicitarRegistroEmpleado()">Enviar Solicitud al Administrador</button>
+            <div class="auth-links" style="justify-content: center;">
+                <a onclick="mostrarFormAuth('login')">← Volver al Inicio de Sesión</a>
+            </div>
+        </div>
+
+        <div class="auth-card" id="form-forgot" style="display: none;">
+            <h2>🔒 Recuperar Contraseña</h2>
+            <p>Se enviará una instrucción de verificación a tu correo</p>
+            <div class="auth-group">
+                <label>Correo Electrónico Registrado</label>
+                <input type="email" id="forgot-email" placeholder="correo@ejemplo.com">
+            </div>
+            <button class="auth-btn" onclick="solicitarRecuperacionCorreo()">Enviar Enlace de Verificación</button>
+            <div class="auth-links" style="justify-content: center;">
+                <a onclick="mostrarFormAuth('login')">← Volver al Inicio de Sesión</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- APLICACIÓN PRINCIPAL -->
+    <div id="app-layout">
+        <!-- Barra superior para celulares (Menú hamburguesa) -->
+        <div class="mobile-header-bar">
+            <button class="hamburger-btn" onclick="toggleMobileSidebar()">☰</button>
+            <span style="color: var(--accent-orange); font-weight: bold; font-size: 0.95rem;">⚡ GYM BODY MASTER</span>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="desktop-wrapper">
+            <aside id="app-sidebar">
+                <div>
+                    <div class="logo-area">
+                        <span>⚡ GYM BODY MASTER</span>
+                    </div>
+                    <ul class="nav-links">
+                        <li class="active" id="nav-dashboard"><a onclick="switchSection('dashboard')">📊 Dashboard</a></li>
+                        <li id="nav-miembros"><a onclick="switchSection('miembros')">👥 Miembros</a></li>
+                        <li id="nav-membresias"><a onclick="switchSection('membresias')">💳 Membresías</a></li>
+                        <li id="nav-pagos"><a onclick="switchSection('pagos')">💰 Caja y Pagos</a></li>
+                        <li id="nav-archivo-facturas"><a onclick="switchSection('archivo-facturas')">📁 Archivo de Facturas</a></li>
+                        <li id="nav-inventario"><a onclick="switchSection('inventario')">📦 Inventario</a></li>
+                        <li id="nav-reportes"><a onclick="switchSection('reportes')">📈 Reportes</a></li>
+                        <li id="nav-informes"><a onclick="switchSection('informes')">📄 Informes</a></li>
+                        <li id="nav-whatsapp"><a onclick="switchSection('whatsapp')">💬 Mensajes WhatsApp</a></li>
+                        <li id="nav-empleados"><a onclick="switchSection('empleados')">🛡️ Gestión Personal</a></li>
+                        <li id="nav-configuracion"><a onclick="switchSection('configuracion')">⚙️ Configuración y Seguridad</a></li>
+                    </ul>
+                </div>
+                <div class="sidebar-footer">
+                    <h4 id="user-role-display">Administrador</h4>
+                    <button class="theme-toggle-btn" onclick="toggleTheme()">
+                        <span id="theme-icon">☀️</span> <span id="theme-text">Modo Claro</span>
+                    </button>
+                    <p onclick="cerrarSesion()" style="cursor:pointer; color:var(--accent-red); margin-top:8px;">Cerrar Sesión</p>
+                </div>
+            </aside>
+
+            <main>
+                <!-- 1. DASHBOARD -->
+                <div id="section-dashboard" class="section-view active-view">
+                    <div class="dashboard-left">
+                        <div class="welcome-banner">
+                            <div>
+                                <h1 id="welcome-title">¡Bienvenido al Sistema!</h1>
+                                <p>Panel integral operativo y estadístico con persistencia de datos activa desde hoy.</p>
+                            </div>
+                            <div id="live-clock" style="font-size: 0.9rem; color: var(--accent-orange); font-weight: bold;"></div>
+                        </div>
+
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="header-metric"><span>Total Miembros</span><span style="color:var(--accent-green);">👥</span></div>
+                                <h3 id="stat-total">0</h3>
+                                <div class="sub-text" id="sub-total-nuevos">+0 este mes</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="header-metric"><span>Membresías Activas</span><span style="color:var(--accent-green);">🟢</span></div>
+                                <h3 id="stat-active">0</h3>
+                                <div class="sub-text" id="sub-active-pct">0% del total</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="header-metric"><span>Por Vencer (7 días)</span><span style="color:var(--accent-orange);">🟡</span></div>
+                                <h3 id="stat-warning">0</h3>
+                                <div class="sub-text">Atención requerida</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="header-metric"><span>Vencidas</span><span style="color:var(--accent-red);">🔴</span></div>
+                                <h3 id="stat-expired">0</h3>
+                                <div class="sub-text">Requiere cobro</div>
+                            </div>
+                        </div>
+
+                        <div class="analytics-grid">
+                            <div class="widget-box">
+                                <h3>Ingresos de los últimos 7 días</h3>
+                                <div style="height: 160px; position: relative;">
+                                    <canvas id="incomeChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="widget-box">
+                                <h3>Productos con poco stock</h3>
+                                <div id="dash-low-stock-list">
+                                    <div class="list-item"><span>Cargando productos...</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="quick-actions">
+                            <button class="action-item" onclick="openModal('modalMiembro')"><div class="action-icon">👤</div>Registrar Membresía</button>
+                            <button class="action-item" onclick="openModal('modalPago')"><div class="action-icon">💳</div>Registrar Pago</button>
+                            <button class="action-item" onclick="openModal('modalProducto')"><div class="action-icon">📦</div>Nuevo Producto</button>
+                            <button class="action-item" onclick="switchSection('informes')"><div class="action-icon">📄</div>Generar Informe</button>
+                            <button class="action-item" onclick="switchSection('whatsapp')"><div class="action-icon">💬</div>WhatsApp API</button>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-right">
+                        <div class="widget-box">
+                            <h3>Membresías próximas a vencer</h3>
+                            <div id="dash-warning-list">
+                                <div class="list-item"><span>Sin avisos pendientes</span></div>
+                            </div>
+                        </div>
+                        <div class="widget-box">
+                            <h3>Membresías vencidas</h3>
+                            <div id="dash-expired-list">
+                                <div class="list-item"><span>Sin morosos registrados</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. MIEMBROS -->
+                <div id="section-miembros" class="full-width-view">
+                    <div class="welcome-banner">
+                        <div><h1>Gestión Avanzada de Miembros</h1><p>Base de datos de socios en tiempo real almacenada permanentemente.</p></div>
+                        <button class="btn btn-primary" onclick="openModal('modalMiembro')">+ Registrar Nueva Membresía</button>
+                    </div>
+                    <div class="widget-box">
+                        <h3>Directorio Completo</h3>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead><tr><th>Documento</th><th>Nombre Completo</th><th>Celular / WhatsApp</th><th>Plan</th><th>F. Registro</th><th>F. Vencimiento</th><th>Estado</th><th>Acciones</th></tr></thead>
+                                <tbody id="tabla-miembros-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. MEMBRESÍAS -->
+                <div id="section-membresias" class="full-width-view">
+                    <div class="welcome-banner">
+                        <div>
+                            <h1>Planes y Tarifas de Membresía</h1>
+                            <p>Configuración general, creación de pases por día y edición de tarifas.</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="openModal('modalPlan')">+ Crear Nuevo Plan / Tarifa</button>
+                    </div>
+                    <div class="analytics-grid" id="contenedor-planes" style="grid-template-columns: repeat(3, 1fr);"></div>
+                </div>
+
+                <!-- 4. CAJA Y PAGOS -->
+                <div id="section-pagos" class="full-width-view">
+                    <div class="welcome-banner">
+                        <div><h1>Caja y Registro de Pagos</h1><p>Control financiero detallado e historial de transacciones.</p></div>
+                        <button class="btn btn-primary" onclick="openModal('modalPago')">+ Registrar Pago</button>
+                    </div>
+                    <div class="widget-box">
+                        <h3>Historial General de Transacciones y Recibos</h3>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead><tr><th>ID TX</th><th>Socio / Cliente</th><th>Concepto</th><th>Método</th><th>Monto</th><th>Fecha Pago</th><th>Fecha Fin Plan</th><th>Factura PDF</th></tr></thead>
+                                <tbody id="tabla-pagos-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MÓDULO: ARCHIVO CENTRALIZADO DE FACTURAS POR USUARIO CON BARRA DE BÚSQUEDA -->
+                <div id="section-archivo-facturas" class="full-width-view">
+                    <div class="welcome-banner">
+                        <div>
+                            <h1>📁 Archivo Centralizado de Facturas por Cliente</h1>
+                            <p>Busca rápida y fácilmente a cualquier cliente para ver y descargar sus facturas en PDF.</p>
+                        </div>
+                    </div>
+
+                    <!-- BARRA DE BÚSQUEDA DE CLIENTES -->
+                    <div class="widget-box">
+                        <h3>🔍 Buscar Cliente para Consultar Facturas</h3>
+                        <div class="autocomplete-container" style="margin-top: 10px;">
+                            <input type="text" id="archivoClienteInput" class="search-bar-input" placeholder="🔍 Escriba el nombre o documento del cliente..." oninput="filtrarArchivoClientes()" autocomplete="off">
+                            <div id="archivoAutocompleteList" class="autocomplete-dropdown"></div>
+                        </div>
+                    </div>
+
+                    <!-- Lista Organizada / Filtrada de Clientes -->
+                    <div class="widget-box">
+                        <h3>Directorio de Clientes</h3>
+                        <div class="clientes-grid-archivo" id="grid-clientes-archivo"></div>
+                    </div>
+
+                    <!-- Detalle individual del usuario seleccionado -->
+                    <div class="widget-box" id="vista-expediente-cliente" style="display: none; border-top: 3px solid var(--accent-orange);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                            <h3 id="expediente-cliente-nombre" style="font-size: 1.1rem; color: var(--accent-orange);">Facturas del Cliente</h3>
+                            <button class="btn btn-secondary" onclick="document.getElementById('vista-expediente-cliente').style.display='none'">✕ Cerrar Expediente</button>
+                        </div>
+                        <p id="expediente-cliente-info" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;"></p>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>N° Factura / ID</th>
+                                        <th>Fecha de Pago</th>
+                                        <th>Concepto</th>
+                                        <th>Método de Pago</th>
+                                        <th>Monto Total</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-facturas-cliente-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. INVENTARIO -->
+                <div id="section-inventario" class="full-width-view">
+                    <div class="welcome-banner">
+                        <div><h1>Inventario de Productos y Suplementos</h1><p>Control de stock de artículos deportivos, proteínas y bebidas hidratantes.</p></div>
+                        <button class="btn btn-primary" onclick="openModal('modalProducto')">+ Agregar Producto</button>
+                    </div>
+                    <div class="widget-box">
+                        <h3>Almacén General</h3>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Precio Venta</th><th>Stock Actual</th><th>Estado</th><th>Acciones</th></tr></thead>
+                                <tbody id="tabla-inventario-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. REPORTES -->
+                <div id="section-reportes" class="full-width-view">
+                    <div class="welcome-banner"><div><h1>Reportes Estadísticos y Analíticas</h1><p>Gráficos de rendimiento comercial y afluencia de socios desde hoy.</p></div></div>
+                    <div class="analytics-grid">
+                        <div class="widget-box">
+                            <h3>Crecimiento de Socios</h3>
+                            <div style="height: 200px; position:relative;"><canvas id="reportChart"></canvas></div>
+                        </div>
+                        <div class="widget-box">
+                            <h3>Distribución de Ingresos</h3>
+                            <div style="height: 200px; position:relative;"><canvas id="pieChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. INFORMES Y ARCHIVOS HISTÓRICOS AUTOMÁTICOS -->
+                <div id="section-informes" class="full-width-view">
+                    <div class="welcome-banner">
+                        <div>
+                            <h1>Módulo de Informes y Contabilidad Semanal</h1>
+                            <p>Genera reportes contables consolidados y revisa el archivador automático semanal/mensual.</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="generarInformeSemanalAuto()">🔄 Generar Informe Semanal Ahora</button>
+                    </div>
+
+                    <div class="analytics-grid" style="grid-template-columns: 2fr 1fr;">
+                        <div class="widget-box" id="vista-previa-informe">
+                            <h3>Vista Previa del Informe de Contabilidad</h3>
+                            <div id="contenido-informe-imprimir" style="background: var(--bg-main); padding:20px; border-radius:8px; border:1px solid var(--border-color); margin-top:10px;">
+                                <p style="color:var(--text-muted); text-align:center;">Haga clic en <strong>"Generar Informe Semanal Ahora"</strong> para procesar la contabilidad.</p>
+                            </div>
+                            <div style="display:flex; gap:10px; margin-top:15px; display:none; flex-wrap: wrap;" id="acciones-informe-btn">
+                                <button class="btn btn-success" onclick="exportarInformeWord()">💾 Descargar Informe en Word (.doc)</button>
+                                <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir / Guardar en PDF</button>
+                            </div>
+                        </div>
+
+                        <div class="widget-box">
+                            <h3>🗄️ Archivo Histórico Automático</h3>
+                            <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">Cierres pasados almacenados automáticamente para mantener limpio el sistema:</p>
+                            <div id="lista-archivos-historicos">
+                                <div class="list-item"><span>No hay cortes históricos aún</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. WHATSAPP -->
+                <div id="section-whatsapp" class="full-width-view">
+                    <div class="welcome-banner"><div><h1>Central de Mensajería WhatsApp API</h1><p>Envío masivo y directo de alertas automáticas a celulares de socios.</p></div></div>
+                    <div class="widget-box">
+                        <h3>Plantillas de Notificación Directa</h3>
+                        <div class="form-group full" style="margin-bottom:15px;">
+                            <label>Número de Celular Destino (Ej: 3001234567)</label>
+                            <input type="text" id="wa-phone" placeholder="Ingrese número de celular con indicativo">
+                        </div>
+                        <div class="form-group full" style="margin-bottom:15px;">
+                            <label>Mensaje Personalizado</label>
+                            <textarea id="wa-msg" placeholder="Hola, te recordamos que tu membresía en Gym Body Master está próxima a vencer...">Hola, te recordamos que tu membresía en Gym Body Master requiere renovación para mantener tu acceso activo.</textarea>
+                        </div>
+                        <button class="btn btn-primary" onclick="enviarWhatsAppDirecto()">Enviar Mensaje vía WhatsApp</button>
+                    </div>
+                </div>
+
+                <!-- 9. EMPLEADOS -->
+                <div id="section-empleados" class="full-width-view">
+                    <div class="welcome-banner"><div><h1>Gestión de Personal y Autorización de Accesos</h1><p>Administración y control de empleados del establecimiento.</p></div></div>
+                    <div class="widget-box">
+                        <h3>Personal Registrado</h3>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead><tr><th>Usuario</th><th>Rol</th><th>Correo Electrónico</th><th>Estado de Acceso</th><th>Acciones Administrativas</th></tr></thead>
+                                <tbody id="tabla-empleados-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 10. CONFIGURACIÓN Y SEGURIDAD -->
+                <div id="section-configuracion" class="full-width-view">
+                    <div class="welcome-banner"><div><h1>Configuración del Sistema y Seguridad</h1><p>Ajustes generales, actualización de contraseñas y registro de accesos.</p></div></div>
+                    <div class="analytics-grid" style="grid-template-columns: 1fr 1fr;">
+                        <div class="widget-box">
+                            <h3>Ajustes Generales</h3>
+                            <div class="form-group">
+                                <label>Nombre del Establecimiento</label>
+                                <input type="text" value="GYM BODY MASTER">
+                            </div>
+                            <div class="form-group">
+                                <label>NIT / Identificación Fiscal</label>
+                                <input type="text" value="900.876.543-1">
+                            </div>
+                            <button class="btn btn-primary" onclick="alert('Configuración guardada correctamente.')">Guardar Cambios</button>
+                        </div>
+                        <div class="widget-box">
+                            <h3>Cambiar Contraseña por Correo</h3>
+                            <div class="form-group">
+                                <label>Correo Electrónico Registrado</label>
+                                <input type="email" id="email-recuperacion" placeholder="admin@bodymaster.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Nueva Contraseña Deseada</label>
+                                <input type="password" id="nueva-pass" placeholder="Nueva contraseña segura">
+                            </div>
+                            <button class="btn btn-primary" onclick="procesarCambioPass()">Solicitar Cambio y Actualizar</button>
+                        </div>
+                    </div>
+
+                    <div class="widget-box" style="margin-top: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                            <h3>📋 Registro de Auditoría de Accesos al Sistema</h3>
+                            <button class="btn btn-danger" style="padding: 4px 10px; font-size: 0.75rem;" onclick="limpiarLogsAccesos()">Vaciar Historial</button>
+                        </div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">Seguimiento detallado de inicios de sesión, usuarios, dispositivos, dirección IP y ubicación geográfica.</p>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha y Hora</th>
+                                        <th>Usuario</th>
+                                        <th>Rol</th>
+                                        <th>Dispositivo / Navegador</th>
+                                        <th>Dirección IP</th>
+                                        <th>Ubicación Aprox.</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-logs-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- MODALES -->
+    <div id="modalMiembro" class="modal">
+        <div class="modal-content">
+            <h2>Registrar Nueva Membresía / Socio</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Tipo de Documento</label>
+                    <select id="tipoDoc">
+                        <option value="CC">Cédula de Ciudadanía (CC)</option>
+                        <option value="TI">Tarjeta de Identidad (TI)</option>
+                        <option value="CE">Cédula de Extranjería (CE)</option>
+                        <option value="PP">Pasaporte (PP)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Número de Documento</label>
+                    <input type="text" id="numDoc" placeholder="Ej: 1098765432">
+                </div>
+                <div class="form-group full">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="nombreMiembro" placeholder="Nombres y Apellidos">
+                </div>
+                <div class="form-group">
+                    <label>Número de Celular / WhatsApp</label>
+                    <input type="text" id="celularMiembro" placeholder="Ej: 3001234567">
+                </div>
+                <div class="form-group">
+                    <label>Seleccionar Plan</label>
+                    <select id="planMiembro"></select>
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Registro</label>
+                    <input type="date" id="fechaInicio">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal('modalMiembro')">Cancelar</button>
+                <button class="btn btn-primary" onclick="registrarMiembroCompleto()">Guardar Membresía</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalPlan" class="modal">
+        <div class="modal-content">
+            <h2>Crear Nuevo Plan o Tarifa</h2>
+            <div class="form-row">
+                <div class="form-group full">
+                    <label>Nombre del Plan</label>
+                    <input type="text" id="planNombre" placeholder="Ej: Pase Diario, Trimestre, Mensualidad">
+                </div>
+                <div class="form-group">
+                    <label>Precio ($ COP)</label>
+                    <input type="number" id="planPrecio" placeholder="Ej: 10000 o 90000">
+                </div>
+                <div class="form-group">
+                    <label>Duración (Días)</label>
+                    <input type="number" id="planDias" placeholder="Ej: 1 para pase día, 30 para mes">
+                </div>
+                <div class="form-group full">
+                    <label>Descripción Breve</label>
+                    <input type="text" id="planDesc" placeholder="Incluye acceso libre a cardio y pesas">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal('modalPlan')">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarNuevoPlan()">Guardar Plan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE PAGO -->
+    <div id="modalPago" class="modal">
+        <div class="modal-content">
+            <h2>Registrar Nuevo Pago o Transacción de Caja</h2>
+            <div class="form-row">
+                <div class="form-group full autocomplete-container">
+                    <label>Buscar Cliente (Escriba para filtrar en tiempo real)</label>
+                    <input type="text" id="pagoClienteInput" placeholder="🔍 Escriba el nombre o documento..." oninput="filtrarAutocompletePagos()" autocomplete="off">
+                    <div id="pagoAutocompleteList" class="autocomplete-dropdown"></div>
+                </div>
+                <div class="form-group">
+                    <label>Concepto de Pago</label>
+                    <input type="text" id="pagoConcepto" placeholder="Ej: Mensualidad, Proteína, Pase Día">
+                </div>
+                <div class="form-group">
+                    <label>Monto ($ COP)</label>
+                    <input type="number" id="pagoMonto" placeholder="Ej: 90000">
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Realización del Pago</label>
+                    <input type="date" id="pagoFechaPago">
+                </div>
+                <div class="form-group">
+                    <label>Fecha Finalización de Membresía</label>
+                    <input type="date" id="pagoFechaFin">
+                </div>
+                <div class="form-group full">
+                    <label>Método de Pago</label>
+                    <select id="pagoMetodo">
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Transferencia / Nequi">Transferencia / Nequi</option>
+                        <option value="Tarjeta">Tarjeta Débito/Crédito</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal('modalPago')">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarPagoTransaccion()">Registrar Pago</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE RECIBO -->
+    <div id="modalRecibo" class="modal">
+        <div class="modal-content" style="width: 450px; text-align: center;">
+            <h2>🧾 Comprobante de Pago Oficial</h2>
+            <div id="recibo-imprimir-area" style="background: #ffffff; color: #000000; padding: 25px; border-radius: 8px; text-align: left; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; margin-top: 10px; border: 1px dashed #333;">
+                <h3 style="text-align: center; color: #000; margin-bottom: 5px; font-size: 1.2rem; font-weight: bold;">⚡ GYM BODY MASTER</h3>
+                <p style="text-align: center; font-size: 0.75rem; color: #555; margin-bottom: 10px;">NIT: 900.876.543-1</p>
+                <hr style="border-top: 1px dashed #000; margin: 10px 0;">
+                <p><strong>N° Transacción:</strong> <span id="rec-id">TX-0000</span></p>
+                <p><strong>Fecha de Pago:</strong> <span id="rec-fecha">00/00/0000</span></p>
+                <p><strong>Vencimiento Plan:</strong> <span id="rec-vencimiento" style="color: #d97706; font-weight: bold;">00/00/0000</span></p>
+                <p><strong>Cliente:</strong> <span id="rec-cliente">Nombre</span></p>
+                <p><strong>Teléfono:</strong> <span id="rec-celular">0000000000</span></p>
+                <hr style="border-top: 1px dashed #000; margin: 10px 0;">
+                <p><strong>Concepto:</strong> <span id="rec-concepto">Mensualidad</span></p>
+                <p><strong>Método de Pago:</strong> <span id="rec-metodo">Efectivo</span></p>
+                <p style="font-size: 1.1rem; margin-top: 10px; background: #f3f4f6; padding: 5px; border-radius: 4px;"><strong>TOTAL PAGADO:</strong> <span id="rec-monto" style="color: #000; font-weight: bold;">$0 COP</span></p>
+                <hr style="border-top: 1px dashed #000; margin: 10px 0;">
+                <p style="text-align: center; font-size: 0.75rem; color: #555;">¡Gracias por su pago! Conserva este recibo.</p>
+            </div>
+            <div class="modal-buttons" style="justify-content: center; gap: 8px; margin-top: 15px; flex-wrap: wrap;">
+                <button class="btn btn-secondary" onclick="closeModal('modalRecibo')">Cerrar</button>
+                <button class="btn btn-success" id="btn-descargar-pdf-recibo" onclick="descargarReciboPDF()">📥 Descargar PDF</button>
+                <button class="btn btn-primary" id="btn-enviar-wa-recibo">💬 Enviar PDF por WA</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalProducto" class="modal">
+        <div class="modal-content">
+            <h2>Agregar Nuevo Producto a Inventario</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Código de Producto</label>
+                    <input type="text" id="prodCodigo" placeholder="Ej: PROT-001">
+                </div>
+                <div class="form-group">
+                    <label>Nombre del Producto</label>
+                    <input type="text" id="prodNombre" placeholder="Ej: Proteína Whey 2lbs">
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select id="prodCat">
+                        <option value="Suplementos">Suplementos</option>
+                        <option value="Bebidas">Bebidas / Hidratación</option>
+                        <option value="Accesorios">Accesorios Deportivos</option>
+                        <option value="Ropa">Ropa Gym</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Precio Venta ($ COP)</label>
+                    <input type="number" id="prodPrecio" placeholder="Ej: 140000">
+                </div>
+                <div class="form-group">
+                    <label>Stock / Cantidad Inicial</label>
+                    <input type="number" id="prodStock" placeholder="Ej: 15">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarProductoInventario()">Guardar Producto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT INTEGRO CON VALIDACIÓN DE FECHA REAL Y ARCHIVADOR AUTOMÁTICO -->
+    <script>
+        let usuarioActual = null;
+        let reciboActualData = null;
+
+        // --- CONTROL DE MENÚ MÓVIL ---
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('app-sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+
+        // --- SISTEMA DE TEMA CLARO / OSCURO ---
+        function initTheme() {
+            const savedTheme = localStorage.getItem('gbm_theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+                document.getElementById('theme-icon').innerText = '🌙';
+                document.getElementById('theme-text').innerText = 'Modo Oscuro';
+            } else {
+                document.body.classList.remove('light-theme');
+                document.getElementById('theme-icon').innerText = '☀️';
+                document.getElementById('theme-text').innerText = 'Modo Claro';
+            }
+        }
+
+        function toggleTheme() {
+            if (document.body.classList.contains('light-theme')) {
+                document.body.classList.remove('light-theme');
+                localStorage.setItem('gbm_theme', 'dark');
+                document.getElementById('theme-icon').innerText = '☀️';
+                document.getElementById('theme-text').innerText = 'Modo Claro';
+            } else {
+                document.body.classList.add('light-theme');
+                localStorage.setItem('gbm_theme', 'light');
+                document.getElementById('theme-icon').innerText = '🌙';
+                document.getElementById('theme-text').innerText = 'Modo Oscuro';
+            }
+            renderCharts();
+            renderIncomeChart();
+        }
+
+        function initDB() {
+            initTheme();
+            if(!localStorage.getItem('gbm_miembros')) {
+                localStorage.setItem('gbm_miembros', JSON.stringify([]));
+            }
+            if(!localStorage.getItem('gbm_planes')) {
+                localStorage.setItem('gbm_planes', JSON.stringify([
+                    { nombre: 'Pase Diario Individual', precio: 10000, dias: 1, desc: 'Acceso por un día completo a instalaciones' },
+                    { nombre: 'Mensualidad Gold', precio: 90000, dias: 30, desc: 'Acceso ilimitado cardio y musculación' },
+                    { nombre: 'Trimestre VIP', precio: 240000, dias: 90, desc: 'Ahorro del 15% + asesoría inicial' },
+                    { nombre: 'Anualidad Elite', precio: 850000, dias: 365, desc: 'Acceso total todo el año con casillero' }
+                ]));
+            }
+            if(!localStorage.getItem('gbm_pagos')) {
+                localStorage.setItem('gbm_pagos', JSON.stringify([]));
+            }
+            if(!localStorage.getItem('gbm_inventario')) {
+                localStorage.setItem('gbm_inventario', JSON.stringify([]));
+            }
+            if(!localStorage.getItem('gbm_informes')) {
+                localStorage.setItem('gbm_informes', JSON.stringify([]));
+            }
+            if(!localStorage.getItem('gbm_logs')) {
+                localStorage.setItem('gbm_logs', JSON.stringify([]));
+            }
+            if(!localStorage.getItem('gbm_historico_cierres')) {
+                localStorage.setItem('gbm_historico_cierres', JSON.stringify([]));
+            }
+
+            let empleados = JSON.parse(localStorage.getItem('gbm_empleados')) || [];
+            const adminExistente = empleados.find(e => e.rol.includes('Administrador Principal'));
+            if(adminExistente) {
+                adminExistente.usuario = 'gymbodymaster';
+                adminExistente.pass = 'master123';
+            } else {
+                empleados.unshift({
+                    usuario: 'gymbodymaster',
+                    email: 'admin@bodymaster.com',
+                    rol: 'Administrador Principal (Super)',
+                    pass: 'master123',
+                    estado: 'Activo'
+                });
+            }
+
+            if(!empleados.some(e => e.usuario === 'cajero1')) {
+                empleados.push({ usuario: 'cajero1', email: 'cajero@bodymaster.com', rol: 'Empleado / Cajero', pass: '12345', estado: 'Activo' });
+            }
+
+            localStorage.setItem('gbm_empleados', JSON.stringify(empleados));
+            verificarYArchivarPeriodosPasados();
+        }
+
+        function verificarYArchivarPeriodosPasados() {
+            let pagos = JSON.parse(localStorage.getItem('gbm_pagos')) || [];
+            if (pagos.length === 0) return;
+
+            const hoy = new Date();
+            const semanaActualNumero = getNumeroSemana(hoy);
+            const mesActualNumero = hoy.getMonth();
+            const anioActual = hoy.getFullYear();
+
+            let historico = JSON.parse(localStorage.getItem('gbm_historico_cierres')) || [];
+            let pagosPendientesActuales = [];
+
+            pagos.forEach(p => {
+                const fechaPagoStr = p.fechaPago || p.fecha;
+                if (!fechaPagoStr) {
+                    pagosPendientesActuales.push(p);
+                    return;
+                }
+                const fPago = new Date(fechaPagoStr + 'T00:00:00');
+                const semPago = getNumeroSemana(fPago);
+                const mesPago = fPago.getMonth();
+                const anioPago = fPago.getFullYear();
+
+                if (anioPago < anioActual || mesPago < mesActualNumero || (mesPago === mesActualNumero && semPago < semanaActualNumero)) {
+                    let periodoKey = `Semana ${semPago} - ${anioPago}`;
+                    let existente = historico.find(h => h.periodo === periodoKey);
+                    if (existente) {
+                        existente.transacciones.push(p);
+                        existente.totalRecaudado += p.monto;
+                    } else {
+                        historico.push({
+                            periodo: periodoKey,
+                            fechaArchivo: new Date().toLocaleDateString(),
+                            totalRecaudado: p.monto,
+                            transacciones: [p]
+                        });
+                    }
+                } else {
+                    pagosPendientesActuales.push(p);
+                }
+            });
+
+            localStorage.setItem('gbm_pagos', JSON.stringify(pagosPendientesActuales));
+            localStorage.setItem('gbm_historico_cierres', JSON.stringify(historico));
+        }
+
+        function getNumeroSemana(d) {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+            var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+            return weekNo;
+        }
+
+        function renderListaArchivosHistoricos() {
+            const historico = JSON.parse(localStorage.getItem('gbm_historico_cierres')) || [];
+            const lista = document.getElementById('lista-archivos-historicos');
+            if(!lista) return;
+            lista.innerHTML = '';
+
+            if(historico.length === 0) {
+                lista.innerHTML = '<div class="list-item"><span>No hay cortes históricos archivados aún</span></div>';
+            } else {
+                historico.forEach(h => {
+                    lista.innerHTML += `
+                        <div class="list-item">
+                            <div><strong>Cierre: ${h.periodo}</strong><br><small style="color:var(--text-muted);">${h.transacciones.length} transacciones</small></div>
+                            <span class="badge-success">$${h.totalRecaudado.toLocaleString()} COP</span>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function getDB(key) {
+            return JSON.parse(localStorage.getItem('gbm_' + key)) || [];
+        }
+
+        function setDB(key, data) {
+            localStorage.setItem('gbm_' + key, JSON.stringify(data));
+        }
+
+        function getTodayOffset(days) {
+            const d = new Date();
+            d.setDate(d.getDate() + days);
+            return d.toISOString().split('T')[0];
+        }
+
+        function obtenerDispositivoCliente() {
+            const ua = navigator.userAgent;
+            let dispositivo = "Escritorio / Desconocido";
+            if (/mobile/i.test(ua)) dispositivo = "Dispositivo Móvil";
+            if (/ipad|tablet/i.test(ua)) dispositivo = "Tablet";
+            
+            let navegador = "Navegador Web";
+            if (ua.indexOf("Chrome") > -1) navegador = "Chrome";
+            else if (ua.indexOf("Safari") > -1) navegador = "Safari";
+            else if (ua.indexOf("Firefox") > -1) navegador = "Firefox";
+            else if (ua.indexOf("Edge") > -1) navegador = "Edge";
+
+            return `${dispositivo} (${navegador})`;
+        }
+
+        async function registrarAuditoriaAcceso(usuario) {
+            let ip = "127.0.0.1 (Local)";
+            let ubicacion = "Local / No detectada";
+
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                if (res.ok) {
+                    const data = await res.json();
+                    ip = data.ip || ip;
+                    ubicacion = `${data.city || 'Desconocida'}, ${data.country_name || ''}`.trim();
+                }
+            } catch (err) {}
+
+            const logs = getDB('logs');
+            const ahora = new Date();
+            
+            logs.push({
+                fechaHora: ahora.toLocaleDateString() + ' ' + ahora.toLocaleTimeString(),
+                usuario: usuario.usuario,
+                rol: usuario.rol,
+                dispositivo: obtenerDispositivoCliente(),
+                ip: ip,
+                ubicacion: ubicacion
+            });
+
+            setDB('logs', logs);
+            renderTablaLogs();
+        }
+
+        function renderTablaLogs() {
+            const logs = getDB('logs');
+            const tbody = document.getElementById('tabla-logs-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Sin registros de acceso.</td></tr>';
+                return;
+            }
+
+            logs.slice().reverse().forEach(log => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><small style="color:var(--text-muted);">${log.fechaHora}</small></td>
+                    <td><strong>${log.usuario}</strong></td>
+                    <td>${log.rol}</td>
+                    <td>${log.dispositivo}</td>
+                    <td><code style="color:var(--accent-orange);">${log.ip}</code></td>
+                    <td>${log.ubicacion}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function limpiarLogsAccesos() {
+            if (confirm('¿Desea eliminar permanentemente el registro histórico de accesos?')) {
+                setDB('logs', []);
+                renderTablaLogs();
+            }
+        }
+
+        function mostrarFormAuth(form) {
+            document.getElementById('form-login').style.display = 'none';
+            document.getElementById('form-register').style.display = 'none';
+            document.getElementById('form-forgot').style.display = 'none';
+
+            if(form === 'login') document.getElementById('form-login').style.display = 'block';
+            if(form === 'register') document.getElementById('form-register').style.display = 'block';
+            if(form === 'forgot') document.getElementById('form-forgot').style.display = 'block';
+        }
+
+        function solicitarRegistroEmpleado() {
+            const usuario = document.getElementById('reg-user').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const rol = document.getElementById('reg-rol').value;
+            const pass = document.getElementById('reg-pass').value.trim();
+
+            if(!usuario || !email || !pass) {
+                alert('Por favor complete todos los campos.');
+                return;
+            }
+
+            const empleados = getDB('empleados');
+            if(empleados.some(e => e.usuario.toLowerCase() === usuario.toLowerCase())) {
+                alert('El nombre de usuario ya está registrado.');
+                return;
+            }
+
+            empleados.push({ usuario, email, rol, pass, estado: 'Pendiente de Aprobación' });
+            setDB('empleados', empleados);
+
+            alert('Solicitud enviada con éxito. Un Administrador debe aprobar tu cuenta desde el módulo de Gestión Personal.');
+            mostrarFormAuth('login');
+        }
+
+        function solicitarRecuperacionCorreo() {
+            const email = document.getElementById('forgot-email').value.trim();
+            const empleados = getDB('empleados');
+            const emp = empleados.find(e => e.email === email);
+
+            if(!emp) {
+                alert('El correo electrónico no se encuentra registrado.');
+                return;
+            }
+
+            alert(`Se ha enviado un enlace al correo: ${email}`);
+            mostrarFormAuth('login');
+        }
+
+        async function intentarLogin() {
+            const user = document.getElementById('login-user').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
+            const empleados = getDB('empleados');
+
+            const usuarioValido = empleados.find(e => e.usuario === user && e.pass === pass);
+
+            if (!usuarioValido) {
+                alert('Usuario o contraseña incorrectos.');
+                return;
+            }
+
+            if (usuarioValido.estado === 'Pendiente de Aprobación') {
+                alert('Acceso Denegado: Su cuenta aún se encuentra PENDIENTE DE APROBACIÓN por un Administrador.');
+                return;
+            }
+
+            if (usuarioValido.estado === 'Inactivo') {
+                alert('Acceso Denegado: Su cuenta ha sido suspendida o rehusada.');
+                return;
+            }
+
+            usuarioActual = usuarioValido;
+            await registrarAuditoriaAcceso(usuarioValido);
+            iniciarApp();
+        }
+
+        function iniciarApp() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('app-layout').style.display = 'block';
+            document.getElementById('user-role-display').innerText = `${usuarioActual.usuario} (${usuarioActual.rol})`;
+            document.getElementById('welcome-title').innerText = `¡Bienvenido, ${usuarioActual.usuario}!`;
+
+            actualizarTodoElSistema();
+            setInterval(updateClock, 1000);
+        }
+
+        function cerrarSesion() {
+            usuarioActual = null;
+            document.getElementById('app-layout').style.display = 'none';
+            document.getElementById('auth-screen').style.display = 'flex';
+            mostrarFormAuth('login');
+        }
+
+        function updateClock() {
+            const clock = document.getElementById('live-clock');
+            if(clock) {
+                const now = new Date();
+                clock.innerText = now.toLocaleDateString() + ' - ' + now.toLocaleTimeString();
+            }
+        }
+
+        function switchSection(secId) {
+            const sections = document.querySelectorAll('.section-view, .full-width-view');
+            sections.forEach(s => s.classList.remove('active-view'));
+
+            const navs = document.querySelectorAll('.nav-links li');
+            navs.forEach(n => n.classList.remove('active'));
+
+            const targetSection = document.getElementById('section-' + secId);
+            const targetNav = document.getElementById('nav-' + secId);
+
+            if(targetSection) targetSection.classList.add('active-view');
+            if(targetNav) targetNav.classList.add('active');
+
+            // Cerrar menú móvil si está abierto
+            const sidebar = document.getElementById('app-sidebar');
+            if (sidebar.classList.contains('mobile-open')) {
+                sidebar.classList.remove('mobile-open');
+            }
+
+            if(secId === 'reportes') renderCharts();
+            if(secId === 'empleados') renderEmpleados();
+            if(secId === 'configuracion') renderTablaLogs();
+            if(secId === 'archivo-facturas') renderGridClientesArchivo();
+            if(secId === 'informes') renderListaArchivosHistoricos();
+        }
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+            if(id === 'modalMiembro') {
+                document.getElementById('fechaInicio').value = getTodayOffset(0);
+            }
+            if(id === 'modalPago') {
+                document.getElementById('pagoClienteInput').value = '';
+                document.getElementById('pagoAutocompleteList').style.display = 'none';
+                document.getElementById('pagoFechaPago').value = getTodayOffset(0);
+                document.getElementById('pagoFechaFin').value = getTodayOffset(30);
+            }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function filtrarAutocompletePagos() {
+            const input = document.getElementById('pagoClienteInput');
+            const list = document.getElementById('pagoAutocompleteList');
+            const query = input.value.toLowerCase().trim();
+            const miembros = getDB('miembros');
+            const pagos = getDB('pagos');
+
+            list.innerHTML = '';
+
+            if (query === '') {
+                list.style.display = 'none';
+                return;
+            }
+
+            const coincidentes = miembros.filter(m => 
+                m.nombre.toLowerCase().includes(query) || 
+                m.doc.toLowerCase().includes(query)
+            );
+
+            if (coincidentes.length === 0) {
+                list.innerHTML = '<div class="autocomplete-item" style="color:var(--text-muted); cursor:default;">No se encontraron clientes</div>';
+                list.style.display = 'block';
+                return;
+            }
+
+            coincidentes.forEach(m => {
+                const haPagado = pagos.some(p => p.cliente.toLowerCase() === m.nombre.toLowerCase());
+                
+                let badgeClass = 'badge-success';
+                let estadoTexto = 'Paz y Salvo';
+
+                if (!haPagado || m.estado === 'Sin Pago Registrado') {
+                    badgeClass = 'badge-neutral';
+                    estadoTexto = 'Sin Pago Registrado';
+                } else if (m.estado === 'Por Vencer') {
+                    badgeClass = 'badge-warning';
+                    estadoTexto = 'Por Vencer';
+                } else if (m.estado === 'Vencida') {
+                    badgeClass = 'badge-danger';
+                    estadoTexto = 'Vencido';
+                }
+
+                const item = document.createElement('div');
+                item.className = 'autocomplete-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${m.nombre}</strong> <small style="color:var(--text-muted);">(${m.doc})</small>
+                    </div>
+                    <span class="${badgeClass}">${estadoTexto}</span>
+                `;
+
+                item.onclick = function() {
+                    seleccionarClienteParaPago(m);
+                };
+
+                list.appendChild(item);
+            });
+
+            list.style.display = 'block';
+        }
+
+        function seleccionarClienteParaPago(miembro) {
+            document.getElementById('pagoClienteInput').value = miembro.nombre;
+            document.getElementById('pagoAutocompleteList').style.display = 'none';
+
+            const planes = getDB('planes');
+            const planSel = planes.find(p => p.nombre === miembro.plan);
+
+            document.getElementById('pagoConcepto').value = 'Membresía / ' + (miembro.plan || 'Plan General');
+            if (planSel) {
+                document.getElementById('pagoMonto').value = planSel.precio;
+                document.getElementById('pagoFechaFin').value = getTodayOffset(planSel.dias);
+            }
+        }
+
+        function filtrarArchivoClientes() {
+            const input = document.getElementById('archivoClienteInput');
+            const dropdown = document.getElementById('archivoAutocompleteList');
+            const query = input.value.toLowerCase().trim();
+            const miembros = getDB('miembros');
+            const pagos = getDB('pagos');
+
+            dropdown.innerHTML = '';
+
+            if (query === '') {
+                dropdown.style.display = 'none';
+                renderGridClientesArchivo();
+                return;
+            }
+
+            const coincidentes = miembros.filter(m => 
+                m.nombre.toLowerCase().includes(query) || 
+                m.doc.toLowerCase().includes(query)
+            );
+
+            if (coincidentes.length === 0) {
+                dropdown.innerHTML = '<div class="autocomplete-item" style="color:var(--text-muted); cursor:default;">No se encontraron clientes</div>';
+                dropdown.style.display = 'block';
+            } else {
+                coincidentes.forEach(m => {
+                    const pagosCliente = pagos.filter(p => p.cliente.toLowerCase() === m.nombre.toLowerCase());
+                    const item = document.createElement('div');
+                    item.className = 'autocomplete-item';
+                    item.innerHTML = `
+                        <div>
+                            <strong>${m.nombre}</strong> <small style="color:var(--text-muted);">(${m.doc})</small>
+                        </div>
+                        <span class="badge-success">${pagosCliente.length} Factura(s)</span>
+                    `;
+                    item.onclick = function() {
+                        input.value = m.nombre;
+                        dropdown.style.display = 'none';
+                        renderGridClientesArchivo(query);
+                        abrirExpedienteCliente(m, pagosCliente);
+                    };
+                    dropdown.appendChild(item);
+                });
+                dropdown.style.display = 'block';
+            }
+
+            renderGridClientesArchivo(query);
+        }
+
+        document.addEventListener('click', function(e) {
+            const listPago = document.getElementById('pagoAutocompleteList');
+            const inputPago = document.getElementById('pagoClienteInput');
+            if (listPago && e.target !== inputPago && !listPago.contains(e.target)) {
+                listPago.style.display = 'none';
+            }
+
+            const listArchivo = document.getElementById('archivoAutocompleteList');
+            const inputArchivo = document.getElementById('archivoClienteInput');
+            if (listArchivo && e.target !== inputArchivo && !listArchivo.contains(e.target)) {
+                listArchivo.style.display = 'none';
+            }
+        });
+
+        function actualizarTodoElSistema() {
+            recalcularEstadosMiembros();
+            renderDashboardStats();
+            renderTablaMiembros();
+            renderPlanes();
+            renderTablaPagos();
+            renderGridClientesArchivo();
+            renderTablaInventario();
+            renderEmpleados();
+            renderListaInformesGuardados();
+            renderListaArchivosHistoricos();
+            renderTablaLogs();
+            cargarOpcionesPlanesModal();
+            renderCharts();
+        }
+
+        function recalcularEstadosMiembros() {
+            const miembros = getDB('miembros');
+            const pagos = getDB('pagos');
+            const hoy = new Date().toISOString().split('T')[0];
+
+            miembros.forEach(m => {
+                const haPagado = pagos.some(p => p.cliente.toLowerCase() === m.nombre.toLowerCase());
+
+                if (!haPagado) {
+                    m.estado = 'Sin Pago Registrado';
+                } else {
+                    const fFin = new Date(m.fin);
+                    const fHoy = new Date(hoy);
+                    const diffTime = fFin - fHoy;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if(diffDays < 0) {
+                        m.estado = 'Vencida';
+                    } else if(diffDays <= 7) {
+                        m.estado = 'Por Vencer';
+                    } else {
+                        m.estado = 'Activo';
+                    }
+                }
+            });
+
+            setDB('miembros', miembros);
+        }
+
+        function renderDashboardStats() {
+            const miembros = getDB('miembros');
+            const total = miembros.length;
+            const activos = miembros.filter(m => m.estado === 'Activo').length;
+            const warning = miembros.filter(m => m.estado === 'Por Vencer').length;
+            const expired = miembros.filter(m => m.estado === 'Vencida').length;
+
+            const hoy = new Date();
+            const mesActual = hoy.getMonth();
+            const anioActual = hoy.getFullYear();
+            const nuevosEsteMes = miembros.filter(m => {
+                if(!m.inicio) return false;
+                const f = new Date(m.inicio);
+                return f.getMonth() === mesActual && f.getFullYear() === anioActual;
+            }).length;
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('sub-total-nuevos').innerText = `+${nuevosEsteMes} este mes`;
+            document.getElementById('stat-active').innerText = activos;
+            document.getElementById('sub-active-pct').innerText = `${total > 0 ? Math.round((activos / total) * 100) : 0}% del total`;
+            document.getElementById('stat-warning').innerText = warning;
+            document.getElementById('stat-expired').innerText = expired;
+
+            const warningList = document.getElementById('dash-warning-list');
+            warningList.innerHTML = '';
+            const porVencerList = miembros.filter(m => m.estado === 'Por Vencer');
+            if(porVencerList.length === 0) {
+                warningList.innerHTML = '<div class="list-item"><span>Sin avisos pendientes</span></div>';
+            } else {
+                porVencerList.forEach(m => {
+                    warningList.innerHTML += `
+                        <div class="list-item">
+                            <div><strong>${m.nombre}</strong><br><small style="color:var(--text-muted);">${m.celular}</small></div>
+                            <span class="badge-warning">Vence: ${m.fin}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            const expiredList = document.getElementById('dash-expired-list');
+            expiredList.innerHTML = '';
+            const morososList = miembros.filter(m => m.estado === 'Vencida');
+            if(morososList.length === 0) {
+                expiredList.innerHTML = '<div class="list-item"><span>Sin morosos registrados</span></div>';
+            } else {
+                morososList.forEach(m => {
+                    expiredList.innerHTML += `
+                        <div class="list-item">
+                            <div><strong>${m.nombre}</strong><br><small style="color:var(--text-muted);">${m.celular}</small></div>
+                            <span class="badge-danger">Venció: ${m.fin}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            const inv = getDB('inventario');
+            const lowStockList = document.getElementById('dash-low-stock-list');
+            lowStockList.innerHTML = '';
+            const pocoStock = inv.filter(i => i.stock <= 5);
+            if(pocoStock.length === 0) {
+                lowStockList.innerHTML = '<div class="list-item"><span>Inventario suficiente en todo</span></div>';
+            } else {
+                pocoStock.forEach(i => {
+                    lowStockList.innerHTML += `
+                        <div class="list-item">
+                            <div><strong>${i.nombre}</strong><br><small style="color:var(--text-muted);">${i.cat}</small></div>
+                            <span class="badge-danger">Quedan ${i.stock} un.</span>
+                        </div>
+                    `;
+                });
+            }
+
+            renderIncomeChart();
+        }
+
+        function renderTablaMiembros() {
+            const miembros = getDB('miembros');
+            const tbody = document.getElementById('tabla-miembros-body');
+            tbody.innerHTML = '';
+
+            if(miembros.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay miembros registrados aún.</td></tr>';
+                return;
+            }
+
+            miembros.forEach((m, idx) => {
+                let badge = '<span class="badge-success">Activo</span>';
+                if (m.estado === 'Sin Pago Registrado') {
+                    badge = '<span class="badge-neutral">Sin Pago Registrado</span>';
+                } else if(m.estado === 'Por Vencer') {
+                    badge = '<span class="badge-warning">Por Vencer</span>';
+                } else if(m.estado === 'Vencida') {
+                    badge = '<span class="badge-danger">Vencida</span>';
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${m.docType} ${m.doc}</td>
+                    <td><strong>${m.nombre}</strong></td>
+                    <td>${m.celular}</td>
+                    <td>${m.plan}</td>
+                    <td>${m.inicio}</td>
+                    <td>${m.estado === 'Sin Pago Registrado' ? 'Pendiente de Pago' : m.fin}</td>
+                    <td>${badge}</td>
+                    <td>
+                        <button class="btn btn-primary" style="padding:3px 8px; font-size:0.75rem;" onclick="prepararWhatsAppModal('${m.celular}', '${m.nombre}')">💬 WhatsApp</button>
+                        <button class="btn btn-danger" style="padding:3px 8px; font-size:0.75rem;" onclick="eliminarMiembro(${idx})">Eliminar</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function cargarOpcionesPlanesModal() {
+            const planes = getDB('planes');
+            const select = document.getElementById('planMiembro');
+            select.innerHTML = '';
+            planes.forEach(p => {
+                select.innerHTML += `<option value="${p.nombre}">${p.nombre} - $${p.precio.toLocaleString()} (${p.dias} días)</option>`;
+            });
+        }
+
+        function registrarMiembroCompleto() {
+            const docType = document.getElementById('tipoDoc').value;
+            const doc = document.getElementById('numDoc').value.trim();
+            const nombre = document.getElementById('nombreMiembro').value.trim();
+            const celular = document.getElementById('celularMiembro').value.trim();
+            const planNombre = document.getElementById('planMiembro').value;
+            const fechaInicio = document.getElementById('fechaInicio').value;
+
+            if(!doc || !nombre || !celular || !fechaInicio) {
+                alert('Por favor complete todos los datos del formulario.');
+                return;
+            }
+
+            const nuevo = {
+                docType, doc, nombre, celular, plan: planNombre,
+                inicio: fechaInicio, fin: fechaInicio,
+                estado: 'Sin Pago Registrado'
+            };
+
+            const miembros = getDB('miembros');
+            miembros.push(nuevo);
+            setDB('miembros', miembros);
+
+            closeModal('modalMiembro');
+            actualizarTodoElSistema();
+            alert('¡Socio registrado con éxito!');
+        }
+
+        function eliminarMiembro(idx) {
+            if(confirm('¿Está seguro de eliminar esta membresía?')) {
+                const miembros = getDB('miembros');
+                miembros.splice(idx, 1);
+                setDB('miembros', miembros);
+                actualizarTodoElSistema();
+            }
+        }
+
+        function renderPlanes() {
+            const planes = getDB('planes');
+            const cont = document.getElementById('contenedor-planes');
+            cont.innerHTML = '';
+
+            planes.forEach((p, idx) => {
+                cont.innerHTML += `
+                    <div class="widget-box" style="border-top: 3px solid var(--accent-orange);">
+                        <h3 style="color:var(--accent-orange);">${p.nombre}</h3>
+                        <p style="font-size:1.5rem; font-weight:bold; margin: 10px 0;">$${p.precio.toLocaleString()} <span style="font-size:0.8rem; color:var(--text-muted);">COP</span></p>
+                        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:15px;">Duración: ${p.dias} Días | ${p.desc}</p>
+                        <button class="btn btn-danger" style="width:100%; font-size:0.75rem;" onclick="eliminarPlan(${idx})">Eliminar Tarifa</button>
+                    </div>
+                `;
+            });
+        }
+
+        function guardarNuevoPlan() {
+            const nombre = document.getElementById('planNombre').value.trim();
+            const precio = parseFloat(document.getElementById('planPrecio').value);
+            const dias = parseInt(document.getElementById('planDias').value);
+            const desc = document.getElementById('planDesc').value.trim();
+
+            if(!nombre || isNaN(precio) || isNaN(dias)) {
+                alert('Complete la información de la tarifa correctamente.');
+                return;
+            }
+
+            const planes = getDB('planes');
+            planes.push({ nombre, precio, dias, desc });
+            setDB('planes', planes);
+
+            closeModal('modalPlan');
+            actualizarTodoElSistema();
+        }
+
+        function eliminarPlan(idx) {
+            if(confirm('¿Eliminar esta tarifa?')) {
+                const planes = getDB('planes');
+                planes.splice(idx, 1);
+                setDB('planes', planes);
+                actualizarTodoElSistema();
+            }
+        }
+
+        function renderTablaPagos() {
+            const pagos = getDB('pagos');
+            const tbody = document.getElementById('tabla-pagos-body');
+            tbody.innerHTML = '';
+
+            if(pagos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay transacciones de caja registradas para este periodo actual.</td></tr>';
+                return;
+            }
+
+            pagos.slice().reverse().forEach((p) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${p.id}</strong></td>
+                    <td>${p.cliente}</td>
+                    <td>${p.concepto}</td>
+                    <td>${p.metodo}</td>
+                    <td style="color:var(--accent-green); font-weight:bold;">+$${p.monto.toLocaleString()}</td>
+                    <td>${p.fechaPago || p.fecha}</td>
+                    <td>${p.fechaFin || 'N/A'}</td>
+                    <td><button class="btn btn-primary" style="padding:2px 6px; font-size:0.7rem;" onclick="verReciboExistente('${p.id}')">🧾 Recibo / PDF</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderGridClientesArchivo(filtro = '') {
+            const miembros = getDB('miembros');
+            const pagos = getDB('pagos');
+            const historico = JSON.parse(localStorage.getItem('gbm_historico_cierres')) || [];
+            
+            let todosLosPagos = [...pagos];
+            historico.forEach(h => { todosLosPagos = todosLosPagos.concat(h.transacciones); });
+
+            const grid = document.getElementById('grid-clientes-archivo');
+            if(!grid) return;
+            grid.innerHTML = '';
+
+            if(miembros.length === 0) {
+                grid.innerHTML = '<p style="color:var(--text-muted); grid-column:1/-1;">No hay clientes registrados en la base de datos.</p>';
+                return;
+            }
+
+            const miembrosFiltrados = miembros.filter(m => 
+                m.nombre.toLowerCase().includes(filtro.toLowerCase()) || 
+                m.doc.toLowerCase().includes(filtro.toLowerCase())
+            );
+
+            if (miembrosFiltrados.length === 0) {
+                grid.innerHTML = '<p style="color:var(--text-muted); grid-column:1/-1;">No se encontraron clientes coincidentes.</p>';
+                return;
+            }
+
+            miembrosFiltrados.forEach(m => {
+                const pagosCliente = todosLosPagos.filter(p => p.cliente.toLowerCase() === m.nombre.toLowerCase());
+                
+                const card = document.createElement('div');
+                card.className = 'cliente-card-archivo';
+                card.onclick = function() { abrirExpedienteCliente(m, pagosCliente); };
+                card.innerHTML = `
+                    <div>
+                        <strong style="font-size:0.9rem;">👤 ${m.nombre}</strong><br>
+                        <small style="color:var(--text-muted);">${m.docType}: ${m.doc}</small>
+                    </div>
+                    <span class="badge-success">${pagosCliente.length} Factura(s)</span>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function abrirExpedienteCliente(miembro, pagosCliente) {
+            const vista = document.getElementById('vista-expediente-cliente');
+            const titulo = document.getElementById('expediente-cliente-nombre');
+            const info = document.getElementById('expediente-cliente-info');
+            const tbody = document.getElementById('tabla-facturas-cliente-body');
+
+            titulo.innerText = `📂 Facturas Emitidas: ${miembro.nombre}`;
+            const totalPagado = pagosCliente.reduce((acc, curr) => acc + curr.monto, 0);
+            info.innerHTML = `<strong>Documento:</strong> ${miembro.docType} ${miembro.doc} | <strong>Celular:</strong> ${miembro.celular} | <strong>Total Facturado:</strong> $${totalPagado.toLocaleString()} COP`;
+
+            tbody.innerHTML = '';
+            if(pagosCliente.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Este cliente no tiene facturas registradas.</td></tr>';
+            } else {
+                pagosCliente.forEach(p => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${p.id}</strong></td>
+                        <td>${p.fechaPago || p.fecha}</td>
+                        <td>${p.concepto}</td>
+                        <td>${p.metodo}</td>
+                        <td style="color:var(--accent-orange); font-weight:bold;">$${p.monto.toLocaleString()} COP</td>
+                        <td><button class="btn btn-primary" style="padding:3px 8px; font-size:0.75rem;" onclick="verReciboExistente('${p.id}')">📄 Ver / Descargar PDF</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            vista.style.display = 'block';
+            vista.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function guardarPagoTransaccion() {
+            const cliente = document.getElementById('pagoClienteInput').value.trim();
+            const concepto = document.getElementById('pagoConcepto').value.trim();
+            const monto = parseFloat(document.getElementById('pagoMonto').value);
+            const metodo = document.getElementById('pagoMetodo').value;
+            const fechaPago = document.getElementById('pagoFechaPago').value;
+            const fechaFin = document.getElementById('pagoFechaFin').value;
+
+            if(!cliente || !concepto || isNaN(monto) || !fechaPago || !fechaFin) {
+                alert('Ingrese la información completa del pago incluyendo las fechas.');
+                return;
+            }
+
+            const idTx = 'TX-' + Math.floor(1000 + Math.random() * 9000);
+
+            const pagos = getDB('pagos');
+            pagos.push({
+                id: idTx,
+                cliente, concepto, metodo, monto,
+                fechaPago, fechaFin, fecha: fechaPago
+            });
+            setDB('pagos', pagos);
+
+            const miembros = getDB('miembros');
+            const socio = miembros.find(m => m.nombre.toLowerCase() === cliente.toLowerCase());
+
+            let celularSocio = '';
+            if (socio) {
+                celularSocio = socio.celular;
+                socio.fin = fechaFin;
+                socio.estado = 'Activo';
+                setDB('miembros', miembros);
+            }
+
+            closeModal('modalPago');
+            actualizarTodoElSistema();
+
+            mostrarReciboGenerado(idTx, cliente, celularSocio, concepto, monto, metodo, fechaPago, fechaFin);
+        }
+
+        function mostrarReciboGenerado(id, cliente, celular, concepto, monto, metodo, fechaPago, fechaFin) {
+            reciboActualData = { id, cliente, celular, concepto, monto, metodo, fechaPago, fechaFin };
+
+            document.getElementById('rec-id').innerText = id;
+            document.getElementById('rec-fecha').innerText = fechaPago;
+            document.getElementById('rec-vencimiento').innerText = fechaFin;
+            document.getElementById('rec-cliente').innerText = cliente;
+            document.getElementById('rec-celular').innerText = celular || 'No registrado';
+            document.getElementById('rec-concepto').innerText = concepto;
+            document.getElementById('rec-metodo').innerText = metodo;
+            document.getElementById('rec-monto').innerText = '$' + monto.toLocaleString() + ' COP';
+
+            const btnWa = document.getElementById('btn-enviar-wa-recibo');
+            btnWa.onclick = function() {
+                const msg = `⚡ *GYM BODY MASTER - COMPROBANTE DE PAGO REGISTRADO*\n\n` +
+                            `*N° Recibo / Factura:* ${id}\n` +
+                            `*Fecha de Pago:* ${fechaPago}\n` +
+                            `*Vencimiento de Membresía:* ${fechaFin}\n` +
+                            `*Cliente:* ${cliente}\n` +
+                            `*Concepto:* ${concepto}\n` +
+                            `*Método:* ${metodo}\n` +
+                            `*TOTAL PAGADO:* $${monto.toLocaleString()} COP\n\n` +
+                            `¡Gracias por tu pago! Hemos registrado tu factura correctamente en el sistema.`;
+                
+                const cleanPhone = (celular || '').replace(/\D/g, '');
+                const url = `https://api.whatsapp.com/send?phone=57${cleanPhone}&text=${encodeURIComponent(msg)}`;
+                
+                window.open(url, '_blank');
+            };
+
+            openModal('modalRecibo');
+        }
+
+        function descargarReciboPDF() {
+            const area = document.getElementById('recibo-imprimir-area');
+            if(!area) return;
+
+            const { jsPDF } = window.jspdf;
+
+            html2canvas(area, { scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth() - 30;
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                pdf.addImage(imgData, 'PNG', 15, 15, pdfWidth, pdfHeight);
+                pdf.save(`Factura_${reciboActualData ? reciboActualData.id : 'Recibo'}_GymBodyMaster.pdf`);
+            });
+        }
+
+        function verReciboExistente(idTx) {
+            const pagos = getDB('pagos');
+            let historico = JSON.parse(localStorage.getItem('gbm_historico_cierres')) || [];
+            
+            let p = pagos.find(x => x.id === idTx);
+            if (!p) {
+                for (let h of historico) {
+                    let found = h.transacciones.find(x => x.id === idTx);
+                    if (found) { p = found; break; }
+                }
+            }
+            if (!p) return;
+
+            const miembros = getDB('miembros');
+            const socio = miembros.find(m => m.nombre.toLowerCase() === p.cliente.toLowerCase());
+            const cel = socio ? socio.celular : '';
+
+            mostrarReciboGenerado(p.id, p.cliente, cel, p.concepto, p.monto, p.metodo, p.fechaPago || p.fecha, p.fechaFin || 'N/A');
+        }
+
+        function renderTablaInventario() {
+            const inv = getDB('inventario');
+            const tbody = document.getElementById('tabla-inventario-body');
+            tbody.innerHTML = '';
+
+            if(inv.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No hay productos en inventario.</td></tr>';
+                return;
+            }
+
+            inv.forEach((i, idx) => {
+                let badge = '<span class="badge-success">En Stock</span>';
+                if(i.stock <= 5) badge = '<span class="badge-danger">Poco Stock</span>';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${i.codigo}</td>
+                    <td><strong>${i.nombre}</strong></td>
+                    <td>${i.cat}</td>
+                    <td>$${i.precio.toLocaleString()}</td>
+                    <td><strong>${i.stock} un.</strong></td>
+                    <td>${badge}</td>
+                    <td>
+                        <button class="btn btn-primary" style="padding:3px 8px; font-size:0.75rem;" onclick="ajustarStock(${idx}, 1)">+1 Stock</button>
+                        <button class="btn btn-secondary" style="padding:3px 8px; font-size:0.75rem;" onclick="ajustarStock(${idx}, -1)">-1 Stock</button>
+                        <button class="btn btn-danger" style="padding:3px 8px; font-size:0.75rem;" onclick="eliminarProducto(${idx})">Eliminar</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function guardarProductoInventario() {
+            const codigo = document.getElementById('prodCodigo').value.trim();
+            const nombre = document.getElementById('prodNombre').value.trim();
+            const cat = document.getElementById('prodCat').value;
+            const precio = parseFloat(document.getElementById('prodPrecio').value);
+            const stock = parseInt(document.getElementById('prodStock').value);
+
+            if(!codigo || !nombre || isNaN(precio) || isNaN(stock)) {
+                alert('Por favor llene los campos requeridos.');
+                return;
+            }
+
+            const inv = getDB('inventario');
+            inv.push({ codigo, nombre, cat, precio, stock, estado: stock <= 5 ? 'Poco Stock' : 'En Stock' });
+            setDB('inventario', inv);
+
+            closeModal('modalProducto');
+            actualizarTodoElSistema();
+        }
+
+        function ajustarStock(idx, cant) {
+            const inv = getDB('inventario');
+            if (cant < 0 && inv[idx].stock <= 0) {
+                alert('El stock ya está en 0.');
+                return;
+            }
+            inv[idx].stock += cant;
+            inv[idx].estado = inv[idx].stock <= 5 ? 'Poco Stock' : 'En Stock';
+            setDB('inventario', inv);
+            actualizarTodoElSistema();
+        }
+
+        function eliminarProducto(idx) {
+            if(confirm('¿Eliminar producto?')) {
+                const inv = getDB('inventario');
+                inv.splice(idx, 1);
+                setDB('inventario', inv);
+                actualizarTodoElSistema();
+            }
+        }
+
+        function renderEmpleados() {
+            const emp = getDB('empleados');
+            const tbody = document.getElementById('tabla-empleados-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            if (emp.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No hay registros de empleados.</td></tr>';
+                return;
+            }
+
+            emp.forEach((e, idx) => {
+                let badgeEstado = '<span class="badge-success">Activo</span>';
+                if(e.estado === 'Pendiente de Aprobación') badgeEstado = '<span class="badge-warning">Pendiente de Aprobación</span>';
+                if(e.estado === 'Inactivo') badgeEstado = '<span class="badge-danger">Inactivo / Cancelado</span>';
+
+                let botonesAccion = '';
+
+                if (e.rol.includes('Super')) {
+                    botonesAccion = '<small style="color:var(--text-muted)">Super Administrador (Protegido)</small>';
+                } else if (e.estado === 'Pendiente de Aprobación') {
+                    botonesAccion = `
+                        <button class="btn btn-success" style="padding:3px 8px; font-size:0.75rem;" onclick="aprobarEmpleado(${idx})">✓ Aprobar</button>
+                        <button class="btn btn-danger" style="padding:3px 8px; font-size:0.75rem;" onclick="rechazarEmpleado(${idx})">✕ Rechazar</button>
+                    `;
+                } else if (e.estado === 'Activo') {
+                    botonesAccion = `
+                        <button class="btn btn-danger" style="padding:3px 8px; font-size:0.75rem;" onclick="cambiarEstadoEmpleado(${idx}, 'Inactivo')">Dar de Baja</button>
+                        <button class="btn btn-secondary" style="padding:3px 8px; font-size:0.75rem;" onclick="eliminarEmpleadoPermanente(${idx})">Eliminar</button>
+                    `;
+                } else {
+                    botonesAccion = `
+                        <button class="btn btn-success" style="padding:3px 8px; font-size:0.75rem;" onclick="cambiarEstadoEmpleado(${idx}, 'Activo')">Reactivar</button>
+                        <button class="btn btn-secondary" style="padding:3px 8px; font-size:0.75rem;" onclick="eliminarEmpleadoPermanente(${idx})">Eliminar</button>
+                    `;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${e.usuario}</strong></td>
+                    <td>${e.rol}</td>
+                    <td>${e.email}</td>
+                    <td>${badgeEstado}</td>
+                    <td>${botonesAccion}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function aprobarEmpleado(idx) {
+            const emp = getDB('empleados');
+            emp[idx].estado = 'Activo';
+            setDB('empleados', emp);
+            renderEmpleados();
+            alert(`Acceso APROBADO para el usuario: ${emp[idx].usuario}`);
+        }
+
+        function rechazarEmpleado(idx) {
+            if (confirm('¿Está seguro de rechazar la solicitud de este empleado?')) {
+                const emp = getDB('empleados');
+                emp.splice(idx, 1);
+                setDB('empleados', emp);
+                renderEmpleados();
+                alert('Solicitud rechazada y eliminada del sistema.');
+            }
+        }
+
+        function cambiarEstadoEmpleado(idx, nuevoEstado) {
+            const emp = getDB('empleados');
+            emp[idx].estado = nuevoEstado;
+            setDB('empleados', emp);
+            renderEmpleados();
+        }
+
+        function eliminarEmpleadoPermanente(idx) {
+            if (confirm('¿Desea eliminar permanentemente a este empleado?')) {
+                const emp = getDB('empleados');
+                emp.splice(idx, 1);
+                setDB('empleados', emp);
+                renderEmpleados();
+            }
+        }
+
+        function procesarCambioPass() {
+            const email = document.getElementById('email-recuperacion').value.trim();
+            const nuevaPass = document.getElementById('nueva-pass').value.trim();
+
+            if(!email || !nuevaPass) {
+                alert('Por favor ingrese el correo y la nueva contraseña.');
+                return;
+            }
+
+            const emp = getDB('empleados');
+            const target = emp.find(e => e.email === email);
+            if(target) {
+                target.pass = nuevaPass;
+                setDB('empleados', emp);
+                alert(`Contraseña actualizada con éxito para ${email}.`);
+            } else {
+                alert('El correo no se encuentra registrado.');
+            }
+        }
+
+        function generarInformeSemanalAuto() {
+            const pagos = getDB('pagos');
+            const miembros = getDB('miembros');
+
+            let totalRecaudado = 0;
+            pagos.forEach(p => totalRecaudado += p.monto);
+
+            const hoy = new Date().toLocaleDateString();
+            const htmlInforme = `
+                <div id="informe-exportar-area">
+                    <h2 style="color:var(--accent-orange); text-align:center;">GYM BODY MASTER - REGISTRO CONTABLE SEMANAL</h2>
+                    <p style="text-align:center; color:var(--text-muted); font-size:0.8rem;">Fecha de emisión: ${hoy}</p>
+                    <hr style="border-color:var(--border-color); margin:15px 0;">
+                    
+                    <h4>Resumen Financiero del Periodo Activo</h4>
+                    <p>Total Transacciones en curso: <strong>${pagos.length}</strong></p>
+                    <p>Recaudo Bruto Actual: <strong style="color:var(--accent-green); font-size:1.1rem;">$${totalRecaudado.toLocaleString()} COP</strong></p>
+                    
+                    <h4 style="margin-top:15px;">Estado Actual de la Base de Socios</h4>
+                    <p>Total Miembros Registrados: <strong>${miembros.length}</strong></p>
+                    <p>Socios Activos: <strong>${miembros.filter(m=>m.estado==='Activo').length}</strong></p>
+                    <p>Socios con Membresía Vencida: <strong>${miembros.filter(m=>m.estado==='Vencida').length}</strong></p>
+
+                    <h4 style="margin-top:15px;">Detalle de Transacciones Recientes</h4>
+                    <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:0.8rem;">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--border-color); text-align:left;">
+                                <th>Cliente</th><th>Concepto</th><th>Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pagos.length === 0 ? '<tr><td colspan="3" style="text-align:center; padding:10px;">Sin transacciones.</td></tr>' : pagos.slice(-5).map(p => `<tr><td>${p.cliente}</td><td>${p.concepto}</td><td>$${p.monto.toLocaleString()}</td></tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            document.getElementById('contenido-informe-imprimir').innerHTML = htmlInforme;
+            document.getElementById('acciones-informe-btn').style.display = 'flex';
+
+            const informes = getDB('informes');
+            informes.push({ fecha: hoy, total: totalRecaudado, socios: miembros.length });
+            setDB('informes', informes);
+            renderListaInformesGuardados();
+        }
+
+        function renderListaInformesGuardados() {
+            const informes = getDB('informes');
+            const lista = document.getElementById('lista-informes-guardados');
+            if(!lista) return;
+            lista.innerHTML = '';
+
+            if(informes.length === 0) {
+                lista.innerHTML = '<div class="list-item"><span>No hay informes archivados aún</span></div>';
+            } else {
+                informes.slice().reverse().forEach(inf => {
+                    lista.innerHTML += `
+                        <div class="list-item">
+                            <div><strong>Informe ${inf.fecha}</strong><br><small style="color:var(--text-muted);">${inf.socios} Socios</small></div>
+                            <span class="badge-success">$${inf.total.toLocaleString()}</span>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function exportarInformeWord() {
+            const contenido = document.getElementById('contenido-informe-imprimir').innerHTML;
+            const blob = new Blob(['\ufeff' + contenido], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Informe_Semanal_GymBodyMaster_${new Date().toISOString().split('T')[0]}.doc`;
+            a.click();
+        }
+
+        function prepararWhatsAppModal(cel, nombre) {
+            switchSection('whatsapp');
+            document.getElementById('wa-phone').value = cel;
+            document.getElementById('wa-msg').value = `Hola ${nombre}, te saludamos de Gym Body Master. Te recordamos que tu membresía está próxima a vencer. ¡Te esperamos para renovar!`;
+        }
+
+        function enviarWhatsAppDirecto() {
+            const phone = document.getElementById('wa-phone').value.trim();
+            const msg = document.getElementById('wa-msg').value.trim();
+
+            if(!phone || !msg) {
+                alert('Ingrese el número de teléfono y el mensaje.');
+                return;
+            }
+
+            const cleanPhone = phone.replace(/\D/g, '');
+            const url = `https://api.whatsapp.com/send?phone=57${cleanPhone}&text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+        }
+
+        let chart1 = null;
+        let chart2 = null;
+        let chart3 = null;
+
+        function renderIncomeChart() {
+            const ctx = document.getElementById('incomeChart');
+            if(!ctx) return;
+
+            if(chart1) chart1.destroy();
+
+            const isLight = document.body.classList.contains('light-theme');
+            const gridColor = isLight ? '#e5e7eb' : '#1f293d';
+            const textColor = isLight ? '#4b5563' : '#9ca3af';
+
+            const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            const hoy = new Date();
+            const labels = [];
+            const dataIngresos = [0, 0, 0, 0, 0, 0, 0];
+
+            for(let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(hoy.getDate() - i);
+                labels.push(diasSemana[d.getDay()]);
+            }
+
+            const pagos = getDB('pagos');
+            pagos.forEach(p => {
+                const fechaStr = p.fechaPago || p.fecha;
+                if(!fechaStr) return;
+                const fPago = new Date(fechaStr + 'T00:00:00');
+                const diffDays = Math.floor((hoy - fPago) / (1000 * 60 * 60 * 24));
+                if(diffDays >= 0 && diffDays < 7) {
+                    dataIngresos[6 - diffDays] += p.monto;
+                }
+            });
+
+            chart1 = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Ingresos ($ COP)',
+                        data: dataIngresos,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: gridColor }, ticks: { color: textColor } },
+                        y: { grid: { color: gridColor }, ticks: { color: textColor } }
+                    }
+                }
+            });
+        }
+
+        function renderCharts() {
+            const ctxReport = document.getElementById('reportChart');
+            const ctxPie = document.getElementById('pieChart');
+            const isLight = document.body.classList.contains('light-theme');
+            const gridColor = isLight ? '#e5e7eb' : '#1f293d';
+            const textColor = isLight ? '#4b5563' : '#9ca3af';
+
+            if(ctxReport) {
+                if(chart2) chart2.destroy();
+
+                const mesesNombres = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                const conteoMeses = Array(12).fill(0);
+
+                const miembros = getDB('miembros');
+                miembros.forEach(m => {
+                    if(!m.inicio) return;
+                    const f = new Date(m.inicio);
+                    conteoMeses[f.getMonth()]++;
+                });
+
+                chart2 = new Chart(ctxReport, {
+                    type: 'bar',
+                    data: {
+                        labels: mesesNombres,
+                        datasets: [{
+                            label: 'Nuevos Socios',
+                            data: conteoMeses,
+                            backgroundColor: '#10b981'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { color: gridColor }, ticks: { color: textColor } },
+                            y: { grid: { color: gridColor }, ticks: { color: textColor } }
+                        }
+                    }
+                });
+            }
+
+            if(ctxPie) {
+                if(chart3) chart3.destroy();
+
+                const pagos = getDB('pagos');
+                let totalMembresias = 0;
+                let totalSuplementos = 0;
+                let totalPasesDia = 0;
+
+                pagos.forEach(p => {
+                    const concepto = p.concepto.toLowerCase();
+                    if(concepto.includes('pase') || concepto.includes('día') || concepto.includes('dia')) {
+                        totalPasesDia += p.monto;
+                    } else if(concepto.includes('mensual') || concepto.includes('renovación') || concepto.includes('inscripción') || concepto.includes('plan') || concepto.includes('trimestre') || concepto.includes('anual')) {
+                        totalMembresias += p.monto;
+                    } else {
+                        totalSuplementos += p.monto;
+                    }
+                });
+
+                chart3 = new Chart(ctxPie, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Membresías', 'Suplementos / Productos', 'Pases Día'],
+                        datasets: [{
+                            data: [totalMembresias, totalSuplementos, totalPasesDia],
+                            backgroundColor: ['#f59e0b', '#10b981', '#ef4444']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { labels: { color: textColor } } }
+                    }
+                });
+            }
+        }
+
+        window.onload = function() {
+            initDB();
+        };
+    </script>
+</body>
+</html>
