@@ -839,7 +839,7 @@
                         <div class="welcome-banner">
                             <div>
                                 <h1 id="welcome-title">¡Bienvenido al Sistema!</h1>
-                                <p>Panel integral operativo y estadístico sincronizado en la nube con Supabase.</p>
+                                <p>Panel integral operativo y estadístico sincronizado en la nube con Supabase (tu_tabla).</p>
                             </div>
                             <div id="live-clock" style="font-size: 0.9rem; color: var(--accent-orange); font-weight: bold;"></div>
                         </div>
@@ -910,7 +910,7 @@
                 <!-- 2. MIEMBROS -->
                 <div id="section-miembros" class="full-width-view">
                     <div class="welcome-banner">
-                        <div><h1>Gestión Avanzada de Miembros</h1><p>Base de datos de socios en tiempo real almacenada permanentemente en Supabase.</p></div>
+                        <div><h1>Gestión Avanzada de Miembros</h1><p>Base de datos de socios en tiempo real almacenada permanentemente.</p></div>
                         <button class="btn btn-primary" onclick="openModal('modalMiembro')">+ Registrar Nueva Membresía</button>
                     </div>
                     <div class="widget-box">
@@ -1326,7 +1326,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE CONEXIÓN CON SUPABASE -->
+    <!-- SCRIPT DE CONEXIÓN CON SUPABASE USANDO tu_tabla -->
     <script>
         const SUPABASE_URL = 'https://zbrypsqywiwoyupkyhrd.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_ElY95RbfutiQotwo55Ln3A_kEIM09mW';
@@ -1384,13 +1384,11 @@
             initTheme();
             
             try {
-                // Intentar leer desde Supabase buscando una fila general con id = 1
-                const { data, error } = await _supabase.from('app_database').select('*').eq('id', 1).single();
+                const { data, error } = await _supabase.from('tu_tabla').select('*').eq('id', 1).single();
                 
-                if (data && data.content) {
+                if (data && data.content && data.content.empleados && data.content.empleados.length > 0) {
                     localDB = data.content;
                 } else {
-                    // Si no existe, creamos los datos por defecto
                     localDB.planes = [
                         { nombre: 'Pase Diario Individual', precio: 10000, dias: 1, desc: 'Acceso por un día completo a instalaciones' },
                         { nombre: 'Mensualidad Gold', precio: 90000, dias: 30, desc: 'Acceso ilimitado cardio y musculación' },
@@ -1404,15 +1402,17 @@
                     await syncToSupabase();
                 }
             } catch (err) {
-                console.warn('Usando respaldo local o error de red inicial con Supabase', err);
+                console.warn('Usando valores por defecto locales ante error de Supabase', err);
+                localDB.empleados = [
+                    { usuario: 'gymbodymaster', email: 'admin@bodymaster.com', rol: 'Administrador Principal (Super)', pass: 'master123', estado: 'Activo' }
+                ];
             }
 
             verificarYArchivarPeriodosPasados();
             
-            // Suscribirse a cambios en tiempo real desde Supabase para que celular y PC se actualicen solos al instante
             _supabase
-              .channel('public:app_database')
-              .on('postgres_changes', { event: '*', schema: 'public', table: 'app_database' }, payload => {
+              .channel('public:tu_tabla')
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'tu_tabla' }, payload => {
                   if (payload.new && payload.new.content) {
                       localDB = payload.new.content;
                       if (usuarioActual) actualizarTodoElSistema();
@@ -1423,8 +1423,8 @@
 
         async function syncToSupabase() {
             try {
-                await _supabase.from('app_database').upsert({ id: 1, content: localDB });
-                setStatus('Conectado · Sincronizado en la nube');
+                await _supabase.from('tu_tabla').upsert({ id: 1, content: localDB });
+                setStatus('Conectado · Sincronizado en la nube (tu_tabla)');
             } catch (err) {
                 setStatus('Sin conexión con Supabase');
             }
