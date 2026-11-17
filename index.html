@@ -5,10 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gym Body Master - Sistema Operativo y ERP Integral</title>
     <!-- Chart.js para estadísticas -->
+     <link rel="icon" type="image/png" href="logo.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- jsPDF y html2canvas para generación de PDFs reales -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg-main: #0b0f19;
@@ -292,7 +295,7 @@
             grid-template-columns: 2fr 1fr;
             gap: 20px;
             width: 100%;
-            min-width: 0; /* Previene desbordamiento en flex/grid */
+            min-width: 0;
         }
 
         .section-view {
@@ -665,7 +668,6 @@
         .btn-danger { background: var(--accent-red); color: #fff; }
         .btn-success { background: var(--accent-green); color: #fff; }
 
-        /* --- RESPONSIVIDAD PARA CELULARES Y TABLETS --- */
         @media (max-width: 992px) {
             .desktop-wrapper {
                 flex-direction: column;
@@ -722,7 +724,6 @@
             }
         }
 
-        /* Impresión limpia del recibo */
         @media print {
             body * { visibility: hidden; }
             #recibo-imprimir-area, #recibo-imprimir-area * { visibility: visible; }
@@ -796,7 +797,6 @@
 
     <!-- APLICACIÓN PRINCIPAL -->
     <div id="app-layout">
-        <!-- Barra superior para celulares (Menú hamburguesa) -->
         <div class="mobile-header-bar">
             <button class="hamburger-btn" onclick="toggleMobileSidebar()">☰</button>
             <span style="color: var(--accent-orange); font-weight: bold; font-size: 0.95rem;">⚡ GYM BODY MASTER</span>
@@ -839,7 +839,7 @@
                         <div class="welcome-banner">
                             <div>
                                 <h1 id="welcome-title">¡Bienvenido al Sistema!</h1>
-                                <p>Panel integral operativo y estadístico con persistencia de datos activa desde hoy.</p>
+                                <p>Panel integral operativo y estadístico sincronizado en la nube con Supabase.</p>
                             </div>
                             <div id="live-clock" style="font-size: 0.9rem; color: var(--accent-orange); font-weight: bold;"></div>
                         </div>
@@ -910,7 +910,7 @@
                 <!-- 2. MIEMBROS -->
                 <div id="section-miembros" class="full-width-view">
                     <div class="welcome-banner">
-                        <div><h1>Gestión Avanzada de Miembros</h1><p>Base de datos de socios en tiempo real almacenada permanentemente.</p></div>
+                        <div><h1>Gestión Avanzada de Miembros</h1><p>Base de datos de socios en tiempo real almacenada permanentemente en Supabase.</p></div>
                         <button class="btn btn-primary" onclick="openModal('modalMiembro')">+ Registrar Nueva Membresía</button>
                     </div>
                     <div class="widget-box">
@@ -953,7 +953,7 @@
                     </div>
                 </div>
 
-                <!-- MÓDULO: ARCHIVO CENTRALIZADO DE FACTURAS POR USUARIO CON BARRA DE BÚSQUEDA -->
+                <!-- ARCHIVO DE FACTURAS -->
                 <div id="section-archivo-facturas" class="full-width-view">
                     <div class="welcome-banner">
                         <div>
@@ -962,7 +962,6 @@
                         </div>
                     </div>
 
-                    <!-- BARRA DE BÚSQUEDA DE CLIENTES -->
                     <div class="widget-box">
                         <h3>🔍 Buscar Cliente para Consultar Facturas</h3>
                         <div class="autocomplete-container" style="margin-top: 10px;">
@@ -971,13 +970,11 @@
                         </div>
                     </div>
 
-                    <!-- Lista Organizada / Filtrada de Clientes -->
                     <div class="widget-box">
                         <h3>Directorio de Clientes</h3>
                         <div class="clientes-grid-archivo" id="grid-clientes-archivo"></div>
                     </div>
 
-                    <!-- Detalle individual del usuario seleccionado -->
                     <div class="widget-box" id="vista-expediente-cliente" style="display: none; border-top: 3px solid var(--accent-orange);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                             <h3 id="expediente-cliente-nombre" style="font-size: 1.1rem; color: var(--accent-orange);">Facturas del Cliente</h3>
@@ -1021,7 +1018,7 @@
 
                 <!-- 6. REPORTES -->
                 <div id="section-reportes" class="full-width-view">
-                    <div class="welcome-banner"><div><h1>Reportes Estadísticos y Analíticas</h1><p>Gráficos de rendimiento comercial y afluencia de socios desde hoy.</p></div></div>
+                    <div class="welcome-banner"><div><h1>Reportes Estadísticos y Analíticas</h1><p>Gráficos de rendimiento comercial y afluencia de socios.</p></div></div>
                     <div class="analytics-grid">
                         <div class="widget-box">
                             <h3>Crecimiento de Socios</h3>
@@ -1034,7 +1031,7 @@
                     </div>
                 </div>
 
-                <!-- 7. INFORMES Y ARCHIVOS HISTÓRICOS AUTOMÁTICOS -->
+                <!-- 7. INFORMES -->
                 <div id="section-informes" class="full-width-view">
                     <div class="welcome-banner">
                         <div>
@@ -1058,7 +1055,7 @@
 
                         <div class="widget-box">
                             <h3>🗄️ Archivo Histórico Automático</h3>
-                            <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">Cierres pasados almacenados automáticamente para mantener limpio el sistema:</p>
+                            <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">Cierres pasados almacenados automáticamente:</p>
                             <div id="lista-archivos-historicos">
                                 <div class="list-item"><span>No hay cortes históricos aún</span></div>
                             </div>
@@ -1132,7 +1129,7 @@
                             <h3>📋 Registro de Auditoría de Accesos al Sistema</h3>
                             <button class="btn btn-danger" style="padding: 4px 10px; font-size: 0.75rem;" onclick="limpiarLogsAccesos()">Vaciar Historial</button>
                         </div>
-                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">Seguimiento detallado de inicios de sesión, usuarios, dispositivos, dirección IP y ubicación geográfica.</p>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">Seguimiento detallado de inicios de sesión, usuarios, dispositivos y dirección IP.</p>
                         <div class="table-responsive">
                             <table class="data-table">
                                 <thead>
@@ -1224,7 +1221,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE PAGO -->
     <div id="modalPago" class="modal">
         <div class="modal-content">
             <h2>Registrar Nuevo Pago o Transacción de Caja</h2>
@@ -1266,7 +1262,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE RECIBO -->
     <div id="modalRecibo" class="modal">
         <div class="modal-content" style="width: 450px; text-align: center;">
             <h2>🧾 Comprobante de Pago Oficial</h2>
@@ -1331,18 +1326,31 @@
         </div>
     </div>
 
-    <!-- SCRIPT INTEGRO CON VALIDACIÓN DE FECHA REAL Y ARCHIVADOR AUTOMÁTICO -->
+    <!-- SCRIPT DE CONEXIÓN CON SUPABASE -->
     <script>
+        const SUPABASE_URL = 'https://zbrypsqywiwoyupkyhrd.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_ElY95RbfutiQotwo55Ln3A_kEIM09mW';
+        const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let localDB = {
+            miembros: [],
+            planes: [],
+            pagos: [],
+            inventario: [],
+            informes: [],
+            logs: [],
+            historico_cierres: [],
+            empleados: []
+        };
+
         let usuarioActual = null;
         let reciboActualData = null;
 
-        // --- CONTROL DE MENÚ MÓVIL ---
         function toggleMobileSidebar() {
             const sidebar = document.getElementById('app-sidebar');
             sidebar.classList.toggle('mobile-open');
         }
 
-        // --- SISTEMA DE TEMA CLARO / OSCURO ---
         function initTheme() {
             const savedTheme = localStorage.getItem('gbm_theme') || 'dark';
             if (savedTheme === 'light') {
@@ -1372,60 +1380,128 @@
             renderIncomeChart();
         }
 
-        function initDB() {
+        async function initDB() {
             initTheme();
-            if(!localStorage.getItem('gbm_miembros')) {
-                localStorage.setItem('gbm_miembros', JSON.stringify([]));
-            }
-            if(!localStorage.getItem('gbm_planes')) {
-                localStorage.setItem('gbm_planes', JSON.stringify([
-                    { nombre: 'Pase Diario Individual', precio: 10000, dias: 1, desc: 'Acceso por un día completo a instalaciones' },
-                    { nombre: 'Mensualidad Gold', precio: 90000, dias: 30, desc: 'Acceso ilimitado cardio y musculación' },
-                    { nombre: 'Trimestre VIP', precio: 240000, dias: 90, desc: 'Ahorro del 15% + asesoría inicial' },
-                    { nombre: 'Anualidad Elite', precio: 850000, dias: 365, desc: 'Acceso total todo el año con casillero' }
-                ]));
-            }
-            if(!localStorage.getItem('gbm_pagos')) {
-                localStorage.setItem('gbm_pagos', JSON.stringify([]));
-            }
-            if(!localStorage.getItem('gbm_inventario')) {
-                localStorage.setItem('gbm_inventario', JSON.stringify([]));
-            }
-            if(!localStorage.getItem('gbm_informes')) {
-                localStorage.setItem('gbm_informes', JSON.stringify([]));
-            }
-            if(!localStorage.getItem('gbm_logs')) {
-                localStorage.setItem('gbm_logs', JSON.stringify([]));
-            }
-            if(!localStorage.getItem('gbm_historico_cierres')) {
-                localStorage.setItem('gbm_historico_cierres', JSON.stringify([]));
+            
+            try {
+                // Intentar leer desde Supabase buscando una fila general con id = 1
+                const { data, error } = await _supabase.from('app_database').select('*').eq('id', 1).single();
+                
+                if (data && data.content) {
+                    localDB = data.content;
+                } else {
+                    // Si no existe, creamos los datos por defecto
+                    localDB.planes = [
+                        { nombre: 'Pase Diario Individual', precio: 10000, dias: 1, desc: 'Acceso por un día completo a instalaciones' },
+                        { nombre: 'Mensualidad Gold', precio: 90000, dias: 30, desc: 'Acceso ilimitado cardio y musculación' },
+                        { nombre: 'Trimestre VIP', precio: 240000, dias: 90, desc: 'Ahorro del 15% + asesoría inicial' },
+                        { nombre: 'Anualidad Elite', precio: 850000, dias: 365, desc: 'Acceso total todo el año con casillero' }
+                    ];
+                    localDB.empleados = [
+                        { usuario: 'gymbodymaster', email: 'admin@bodymaster.com', rol: 'Administrador Principal (Super)', pass: 'master123', estado: 'Activo' },
+                        { usuario: 'cajero1', email: 'cajero@bodymaster.com', rol: 'Empleado / Cajero', pass: '12345', estado: 'Activo' }
+                    ];
+                    await syncToSupabase();
+                }
+            } catch (err) {
+                console.warn('Usando respaldo local o error de red inicial con Supabase', err);
             }
 
-            let empleados = JSON.parse(localStorage.getItem('gbm_empleados')) || [];
-            const adminExistente = empleados.find(e => e.rol.includes('Administrador Principal'));
-            if(adminExistente) {
-                adminExistente.usuario = 'gymbodymaster';
-                adminExistente.pass = 'master123';
-            } else {
-                empleados.unshift({
-                    usuario: 'gymbodymaster',
-                    email: 'admin@bodymaster.com',
-                    rol: 'Administrador Principal (Super)',
-                    pass: 'master123',
-                    estado: 'Activo'
-                });
-            }
-
-            if(!empleados.some(e => e.usuario === 'cajero1')) {
-                empleados.push({ usuario: 'cajero1', email: 'cajero@bodymaster.com', rol: 'Empleado / Cajero', pass: '12345', estado: 'Activo' });
-            }
-
-            localStorage.setItem('gbm_empleados', JSON.stringify(empleados));
             verificarYArchivarPeriodosPasados();
+            
+            // Suscribirse a cambios en tiempo real desde Supabase para que celular y PC se actualicen solos al instante
+            _supabase
+              .channel('public:app_database')
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'app_database' }, payload => {
+                  if (payload.new && payload.new.content) {
+                      localDB = payload.new.content;
+                      if (usuarioActual) actualizarTodoElSistema();
+                  }
+              })
+              .subscribe();
+        }
+
+        async function syncToSupabase() {
+            try {
+                await _supabase.from('app_database').upsert({ id: 1, content: localDB });
+                setStatus('Conectado · Sincronizado en la nube');
+            } catch (err) {
+                setStatus('Sin conexión con Supabase');
+            }
+        }
+
+        function setStatus(message) {
+            let el = document.getElementById('gbm-network-status');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'gbm-network-status';
+                el.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:99999;padding:7px 11px;border-radius:7px;background:#172033;color:#fff;border:1px solid #475569;font:12px Segoe UI,Arial;box-shadow:0 2px 10px #0005;max-width:85vw';
+                document.body.appendChild(el);
+            }
+            el.textContent = '● ' + message;
+        }
+
+        function getDB(key) {
+            return localDB[key] || [];
+        }
+
+        async function setDB(key, data) {
+            localDB[key] = data;
+            await syncToSupabase();
+        }
+
+        function getTodayOffset(days) {
+            const d = new Date();
+            d.setDate(d.getDate() + days);
+            return d.toISOString().split('T')[0];
+        }
+
+        function obtenerDispositivoCliente() {
+            const ua = navigator.userAgent;
+            let dispositivo = "Escritorio / Desconocido";
+            if (/mobile/i.test(ua)) dispositivo = "Dispositivo Móvil";
+            if (/ipad|tablet/i.test(ua)) dispositivo = "Tablet";
+            
+            let navegador = "Navegador Web";
+            if (ua.indexOf("Chrome") > -1) navegador = "Chrome";
+            else if (ua.indexOf("Safari") > -1) navegador = "Safari";
+            else if (ua.indexOf("Firefox") > -1) navegador = "Firefox";
+            else if (ua.indexOf("Edge") > -1) navegador = "Edge";
+
+            return `${dispositivo} (${navegador})`;
+        }
+
+        async function registrarAuditoriaAcceso(usuario) {
+            let ip = "127.0.0.1 (Cloud)";
+            let ubicacion = "Supabase Cloud";
+
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                if (res.ok) {
+                    const data = await res.json();
+                    ip = data.ip || ip;
+                    ubicacion = `${data.city || 'Desconocida'}, ${data.country_name || ''}`.trim();
+                }
+            } catch (err) {}
+
+            const logs = getDB('logs');
+            const ahora = new Date();
+            
+            logs.push({
+                fechaHora: ahora.toLocaleDateString() + ' ' + ahora.toLocaleTimeString(),
+                usuario: usuario.usuario,
+                rol: usuario.rol,
+                dispositivo: obtenerDispositivoCliente(),
+                ip: ip,
+                ubicacion: ubicacion
+            });
+
+            await setDB('logs', logs);
+            renderTablaLogs();
         }
 
         function verificarYArchivarPeriodosPasados() {
-            let pagos = JSON.parse(localStorage.getItem('gbm_pagos')) || [];
+            let pagos = getDB('pagos');
             if (pagos.length === 0) return;
 
             const hoy = new Date();
@@ -1433,7 +1509,7 @@
             const mesActualNumero = hoy.getMonth();
             const anioActual = hoy.getFullYear();
 
-            let historico = JSON.parse(localStorage.getItem('gbm_historico_cierres')) || [];
+            let historico = getDB('historico_cierres');
             let pagosPendientesActuales = [];
 
             pagos.forEach(p => {
@@ -1466,8 +1542,9 @@
                 }
             });
 
-            localStorage.setItem('gbm_pagos', JSON.stringify(pagosPendientesActuales));
-            localStorage.setItem('gbm_historico_cierres', JSON.stringify(historico));
+            localDB.pagos = pagosPendientesActuales;
+            localDB.historico_cierres = historico;
+            syncToSupabase();
         }
 
         function getNumeroSemana(d) {
@@ -1479,7 +1556,7 @@
         }
 
         function renderListaArchivosHistoricos() {
-            const historico = JSON.parse(localStorage.getItem('gbm_historico_cierres')) || [];
+            const historico = getDB('historico_cierres');
             const lista = document.getElementById('lista-archivos-historicos');
             if(!lista) return;
             lista.innerHTML = '';
@@ -1498,96 +1575,6 @@
             }
         }
 
-        function getDB(key) {
-            return JSON.parse(localStorage.getItem('gbm_' + key)) || [];
-        }
-
-        function setDB(key, data) {
-            localStorage.setItem('gbm_' + key, JSON.stringify(data));
-        }
-
-        function getTodayOffset(days) {
-            const d = new Date();
-            d.setDate(d.getDate() + days);
-            return d.toISOString().split('T')[0];
-        }
-
-        function obtenerDispositivoCliente() {
-            const ua = navigator.userAgent;
-            let dispositivo = "Escritorio / Desconocido";
-            if (/mobile/i.test(ua)) dispositivo = "Dispositivo Móvil";
-            if (/ipad|tablet/i.test(ua)) dispositivo = "Tablet";
-            
-            let navegador = "Navegador Web";
-            if (ua.indexOf("Chrome") > -1) navegador = "Chrome";
-            else if (ua.indexOf("Safari") > -1) navegador = "Safari";
-            else if (ua.indexOf("Firefox") > -1) navegador = "Firefox";
-            else if (ua.indexOf("Edge") > -1) navegador = "Edge";
-
-            return `${dispositivo} (${navegador})`;
-        }
-
-        async function registrarAuditoriaAcceso(usuario) {
-            let ip = "127.0.0.1 (Local)";
-            let ubicacion = "Local / No detectada";
-
-            try {
-                const res = await fetch('https://ipapi.co/json/');
-                if (res.ok) {
-                    const data = await res.json();
-                    ip = data.ip || ip;
-                    ubicacion = `${data.city || 'Desconocida'}, ${data.country_name || ''}`.trim();
-                }
-            } catch (err) {}
-
-            const logs = getDB('logs');
-            const ahora = new Date();
-            
-            logs.push({
-                fechaHora: ahora.toLocaleDateString() + ' ' + ahora.toLocaleTimeString(),
-                usuario: usuario.usuario,
-                rol: usuario.rol,
-                dispositivo: obtenerDispositivoCliente(),
-                ip: ip,
-                ubicacion: ubicacion
-            });
-
-            setDB('logs', logs);
-            renderTablaLogs();
-        }
-
-        function renderTablaLogs() {
-            const logs = getDB('logs');
-            const tbody = document.getElementById('tabla-logs-body');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            if (logs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Sin registros de acceso.</td></tr>';
-                return;
-            }
-
-            logs.slice().reverse().forEach(log => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><small style="color:var(--text-muted);">${log.fechaHora}</small></td>
-                    <td><strong>${log.usuario}</strong></td>
-                    <td>${log.rol}</td>
-                    <td>${log.dispositivo}</td>
-                    <td><code style="color:var(--accent-orange);">${log.ip}</code></td>
-                    <td>${log.ubicacion}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function limpiarLogsAccesos() {
-            if (confirm('¿Desea eliminar permanentemente el registro histórico de accesos?')) {
-                setDB('logs', []);
-                renderTablaLogs();
-            }
-        }
-
         function mostrarFormAuth(form) {
             document.getElementById('form-login').style.display = 'none';
             document.getElementById('form-register').style.display = 'none';
@@ -1598,7 +1585,7 @@
             if(form === 'forgot') document.getElementById('form-forgot').style.display = 'block';
         }
 
-        function solicitarRegistroEmpleado() {
+        async function solicitarRegistroEmpleado() {
             const usuario = document.getElementById('reg-user').value.trim();
             const email = document.getElementById('reg-email').value.trim();
             const rol = document.getElementById('reg-rol').value;
@@ -1616,7 +1603,7 @@
             }
 
             empleados.push({ usuario, email, rol, pass, estado: 'Pendiente de Aprobación' });
-            setDB('empleados', empleados);
+            await setDB('empleados', empleados);
 
             alert('Solicitud enviada con éxito. Un Administrador debe aprobar tu cuenta desde el módulo de Gestión Personal.');
             mostrarFormAuth('login');
@@ -1654,7 +1641,7 @@
             }
 
             if (usuarioValido.estado === 'Inactivo') {
-                alert('Acceso Denegado: Su cuenta ha sido suspendida o rehusada.');
+                alert('Acceso Denegado: Su cuenta ha sido suspendida.');
                 return;
             }
 
@@ -1701,7 +1688,6 @@
             if(targetSection) targetSection.classList.add('active-view');
             if(targetNav) targetNav.classList.add('active');
 
-            // Cerrar menú móvil si está abierto
             const sidebar = document.getElementById('app-sidebar');
             if (sidebar.classList.contains('mobile-open')) {
                 sidebar.classList.remove('mobile-open');
@@ -1739,7 +1725,6 @@
             const pagos = getDB('pagos');
 
             list.innerHTML = '';
-
             if (query === '') {
                 list.style.display = 'none';
                 return;
@@ -1758,7 +1743,6 @@
 
             coincidentes.forEach(m => {
                 const haPagado = pagos.some(p => p.cliente.toLowerCase() === m.nombre.toLowerCase());
-                
                 let badgeClass = 'badge-success';
                 let estadoTexto = 'Paz y Salvo';
 
@@ -1781,11 +1765,7 @@
                     </div>
                     <span class="${badgeClass}">${estadoTexto}</span>
                 `;
-
-                item.onclick = function() {
-                    seleccionarClienteParaPago(m);
-                };
-
+                item.onclick = function() { seleccionarClienteParaPago(m); };
                 list.appendChild(item);
             });
 
@@ -1814,7 +1794,6 @@
             const pagos = getDB('pagos');
 
             dropdown.innerHTML = '';
-
             if (query === '') {
                 dropdown.style.display = 'none';
                 renderGridClientesArchivo();
@@ -1910,7 +1889,7 @@
                 }
             });
 
-            setDB('miembros', miembros);
+            localDB.miembros = miembros;
         }
 
         function renderDashboardStats() {
@@ -2035,7 +2014,7 @@
             });
         }
 
-        function registrarMiembroCompleto() {
+        async function registrarMiembroCompleto() {
             const docType = document.getElementById('tipoDoc').value;
             const doc = document.getElementById('numDoc').value.trim();
             const nombre = document.getElementById('nombreMiembro').value.trim();
@@ -2056,18 +2035,18 @@
 
             const miembros = getDB('miembros');
             miembros.push(nuevo);
-            setDB('miembros', miembros);
+            await setDB('miembros', miembros);
 
             closeModal('modalMiembro');
             actualizarTodoElSistema();
-            alert('¡Socio registrado con éxito!');
+            alert('¡Socio registrado con éxito en Supabase!');
         }
 
-        function eliminarMiembro(idx) {
+        async function eliminarMiembro(idx) {
             if(confirm('¿Está seguro de eliminar esta membresía?')) {
                 const miembros = getDB('miembros');
                 miembros.splice(idx, 1);
-                setDB('miembros', miembros);
+                await setDB('miembros', miembros);
                 actualizarTodoElSistema();
             }
         }
@@ -2089,7 +2068,7 @@
             });
         }
 
-        function guardarNuevoPlan() {
+        async function guardarNuevoPlan() {
             const nombre = document.getElementById('planNombre').value.trim();
             const precio = parseFloat(document.getElementById('planPrecio').value);
             const dias = parseInt(document.getElementById('planDias').value);
@@ -2102,17 +2081,17 @@
 
             const planes = getDB('planes');
             planes.push({ nombre, precio, dias, desc });
-            setDB('planes', planes);
+            await setDB('planes', planes);
 
             closeModal('modalPlan');
             actualizarTodoElSistema();
         }
 
-        function eliminarPlan(idx) {
+        async function eliminarPlan(idx) {
             if(confirm('¿Eliminar esta tarifa?')) {
                 const planes = getDB('planes');
                 planes.splice(idx, 1);
-                setDB('planes', planes);
+                await setDB('planes', planes);
                 actualizarTodoElSistema();
             }
         }
@@ -2123,7 +2102,7 @@
             tbody.innerHTML = '';
 
             if(pagos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay transacciones de caja registradas para este periodo actual.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay transacciones de caja registradas.</td></tr>';
                 return;
             }
 
@@ -2146,7 +2125,7 @@
         function renderGridClientesArchivo(filtro = '') {
             const miembros = getDB('miembros');
             const pagos = getDB('pagos');
-            const historico = JSON.parse(localStorage.getItem('gbm_historico_cierres')) || [];
+            const historico = getDB('historico_cierres');
             
             let todosLosPagos = [...pagos];
             historico.forEach(h => { todosLosPagos = todosLosPagos.concat(h.transacciones); });
@@ -2219,7 +2198,7 @@
             vista.scrollIntoView({ behavior: 'smooth' });
         }
 
-        function guardarPagoTransaccion() {
+        async function guardarPagoTransaccion() {
             const cliente = document.getElementById('pagoClienteInput').value.trim();
             const concepto = document.getElementById('pagoConcepto').value.trim();
             const monto = parseFloat(document.getElementById('pagoMonto').value);
@@ -2240,7 +2219,7 @@
                 cliente, concepto, metodo, monto,
                 fechaPago, fechaFin, fecha: fechaPago
             });
-            setDB('pagos', pagos);
+            await setDB('pagos', pagos);
 
             const miembros = getDB('miembros');
             const socio = miembros.find(m => m.nombre.toLowerCase() === cliente.toLowerCase());
@@ -2250,7 +2229,7 @@
                 celularSocio = socio.celular;
                 socio.fin = fechaFin;
                 socio.estado = 'Activo';
-                setDB('miembros', miembros);
+                await setDB('miembros', miembros);
             }
 
             closeModal('modalPago');
@@ -2281,11 +2260,10 @@
                             `*Concepto:* ${concepto}\n` +
                             `*Método:* ${metodo}\n` +
                             `*TOTAL PAGADO:* $${monto.toLocaleString()} COP\n\n` +
-                            `¡Gracias por tu pago! Hemos registrado tu factura correctamente en el sistema.`;
+                            `¡Gracias por tu pago! Hemos registrado tu factura correctamente en Supabase.`;
                 
                 const cleanPhone = (celular || '').replace(/\D/g, '');
                 const url = `https://api.whatsapp.com/send?phone=57${cleanPhone}&text=${encodeURIComponent(msg)}`;
-                
                 window.open(url, '_blank');
             };
 
@@ -2312,7 +2290,7 @@
 
         function verReciboExistente(idTx) {
             const pagos = getDB('pagos');
-            let historico = JSON.parse(localStorage.getItem('gbm_historico_cierres')) || [];
+            let historico = getDB('historico_cierres');
             
             let p = pagos.find(x => x.id === idTx);
             if (!p) {
@@ -2362,7 +2340,7 @@
             });
         }
 
-        function guardarProductoInventario() {
+        async function guardarProductoInventario() {
             const codigo = document.getElementById('prodCodigo').value.trim();
             const nombre = document.getElementById('prodNombre').value.trim();
             const cat = document.getElementById('prodCat').value;
@@ -2376,13 +2354,13 @@
 
             const inv = getDB('inventario');
             inv.push({ codigo, nombre, cat, precio, stock, estado: stock <= 5 ? 'Poco Stock' : 'En Stock' });
-            setDB('inventario', inv);
+            await setDB('inventario', inv);
 
             closeModal('modalProducto');
             actualizarTodoElSistema();
         }
 
-        function ajustarStock(idx, cant) {
+        async function ajustarStock(idx, cant) {
             const inv = getDB('inventario');
             if (cant < 0 && inv[idx].stock <= 0) {
                 alert('El stock ya está en 0.');
@@ -2390,15 +2368,15 @@
             }
             inv[idx].stock += cant;
             inv[idx].estado = inv[idx].stock <= 5 ? 'Poco Stock' : 'En Stock';
-            setDB('inventario', inv);
+            await setDB('inventario', inv);
             actualizarTodoElSistema();
         }
 
-        function eliminarProducto(idx) {
+        async function eliminarProducto(idx) {
             if(confirm('¿Eliminar producto?')) {
                 const inv = getDB('inventario');
                 inv.splice(idx, 1);
-                setDB('inventario', inv);
+                await setDB('inventario', inv);
                 actualizarTodoElSistema();
             }
         }
@@ -2420,7 +2398,6 @@
                 if(e.estado === 'Inactivo') badgeEstado = '<span class="badge-danger">Inactivo / Cancelado</span>';
 
                 let botonesAccion = '';
-
                 if (e.rol.includes('Super')) {
                     botonesAccion = '<small style="color:var(--text-muted)">Super Administrador (Protegido)</small>';
                 } else if (e.estado === 'Pendiente de Aprobación') {
@@ -2452,41 +2429,41 @@
             });
         }
 
-        function aprobarEmpleado(idx) {
+        async function aprobarEmpleado(idx) {
             const emp = getDB('empleados');
             emp[idx].estado = 'Activo';
-            setDB('empleados', emp);
+            await setDB('empleados', emp);
             renderEmpleados();
             alert(`Acceso APROBADO para el usuario: ${emp[idx].usuario}`);
         }
 
-        function rechazarEmpleado(idx) {
+        async function rechazarEmpleado(idx) {
             if (confirm('¿Está seguro de rechazar la solicitud de este empleado?')) {
                 const emp = getDB('empleados');
                 emp.splice(idx, 1);
-                setDB('empleados', emp);
+                await setDB('empleados', emp);
                 renderEmpleados();
                 alert('Solicitud rechazada y eliminada del sistema.');
             }
         }
 
-        function cambiarEstadoEmpleado(idx, nuevoEstado) {
+        async function cambiarEstadoEmpleado(idx, nuevoEstado) {
             const emp = getDB('empleados');
             emp[idx].estado = nuevoEstado;
-            setDB('empleados', emp);
+            await setDB('empleados', emp);
             renderEmpleados();
         }
 
-        function eliminarEmpleadoPermanente(idx) {
+        async function eliminarEmpleadoPermanente(idx) {
             if (confirm('¿Desea eliminar permanentemente a este empleado?')) {
                 const emp = getDB('empleados');
                 emp.splice(idx, 1);
-                setDB('empleados', emp);
+                await setDB('empleados', emp);
                 renderEmpleados();
             }
         }
 
-        function procesarCambioPass() {
+        async function procesarCambioPass() {
             const email = document.getElementById('email-recuperacion').value.trim();
             const nuevaPass = document.getElementById('nueva-pass').value.trim();
 
@@ -2499,14 +2476,14 @@
             const target = emp.find(e => e.email === email);
             if(target) {
                 target.pass = nuevaPass;
-                setDB('empleados', emp);
+                await setDB('empleados', emp);
                 alert(`Contraseña actualizada con éxito para ${email}.`);
             } else {
                 alert('El correo no se encuentra registrado.');
             }
         }
 
-        function generarInformeSemanalAuto() {
+        async function generarInformeSemanalAuto() {
             const pagos = getDB('pagos');
             const miembros = getDB('miembros');
 
@@ -2548,7 +2525,7 @@
 
             const informes = getDB('informes');
             informes.push({ fecha: hoy, total: totalRecaudado, socios: miembros.length });
-            setDB('informes', informes);
+            await setDB('informes', informes);
             renderListaInformesGuardados();
         }
 
@@ -2742,8 +2719,8 @@
             }
         }
 
-        window.onload = function() {
-            initDB();
+        window.onload = async function() {
+            await initDB();
         };
     </script>
 </body>
