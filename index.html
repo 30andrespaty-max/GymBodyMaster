@@ -171,6 +171,8 @@
             width: 100%;
         }
 
+        .mobile-logout-btn { background: var(--accent-red); color: #fff; border: 0; border-radius: 6px; padding: 7px 10px; font-size: .75rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
         .hamburger-btn {
             background: none;
             border: none;
@@ -197,6 +199,7 @@
             padding: 20px;
             border-right: 1px solid var(--border-color);
             height: 100vh;
+            overflow-y: auto;
             position: sticky;
             top: 0;
             transition: transform 0.3s ease;
@@ -712,6 +715,10 @@
         }
 
         @media (max-width: 576px) {
+            .mobile-header-bar { gap: 8px; padding: 10px 12px; }
+            .mobile-header-bar > span { flex: 1; text-align: center; }
+            aside { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+            .sidebar-footer { margin-top: 12px; }
             .metrics-grid {
                 grid-template-columns: 1fr;
             }
@@ -749,7 +756,6 @@
             <button class="auth-btn" onclick="intentarLogin()">Iniciar Sesión</button>
             <div class="auth-links">
                 <a onclick="mostrarFormAuth('register')">Solicitar Registro Nuevo Empleado</a>
-                <a onclick="mostrarFormAuth('forgot')">¿Olvidaste tu contraseña?</a>
             </div>
         </div>
 
@@ -781,26 +787,14 @@
             </div>
         </div>
 
-        <div class="auth-card" id="form-forgot" style="display: none;">
-            <h2>🔒 Recuperar Contraseña</h2>
-            <p>Se enviará una instrucción de verificación a tu correo</p>
-            <div class="auth-group">
-                <label>Correo Electrónico Registrado</label>
-                <input type="email" id="forgot-email" placeholder="correo@ejemplo.com">
-            </div>
-            <button class="auth-btn" onclick="solicitarRecuperacionCorreo()">Enviar Enlace de Verificación</button>
-            <div class="auth-links" style="justify-content: center;">
-                <a onclick="mostrarFormAuth('login')">← Volver al Inicio de Sesión</a>
-            </div>
-        </div>
-    </div>
+</div>
 
     <!-- APLICACIÓN PRINCIPAL -->
     <div id="app-layout">
         <div class="mobile-header-bar">
             <button class="hamburger-btn" onclick="toggleMobileSidebar()">☰</button>
             <span style="color: var(--accent-orange); font-weight: bold; font-size: 0.95rem;">⚡ GYM BODY MASTER</span>
-            <div style="width: 24px;"></div>
+            <button class="mobile-logout-btn" onclick="cerrarSesion()" aria-label="Cerrar sesión">↪ Salir</button>
         </div>
 
         <div class="desktop-wrapper">
@@ -1049,7 +1043,7 @@
                             </div>
                             <div style="display:flex; gap:10px; margin-top:15px; display:none; flex-wrap: wrap;" id="acciones-informe-btn">
                                 <button class="btn btn-success" onclick="exportarInformeWord()">💾 Descargar Informe en Word (.doc)</button>
-                                <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir / Guardar en PDF</button>
+                                <button class="btn btn-primary" onclick="exportarInformePDF()">📄 Descargar Informe en PDF</button>
                             </div>
                         </div>
 
@@ -1073,8 +1067,18 @@
                             <input type="text" id="wa-phone" placeholder="Ingrese número de celular con indicativo">
                         </div>
                         <div class="form-group full" style="margin-bottom:15px;">
-                            <label>Mensaje Personalizado</label>
-                            <textarea id="wa-msg" placeholder="Hola, te recordamos que tu membresía en Gym Body Master está próxima a vencer...">Hola, te recordamos que tu membresía en Gym Body Master requiere renovación para mantener tu acceso activo.</textarea>
+                            <label>Plantilla 1: Membresía próxima a vencer (editable)</label>
+                            <textarea id="wa-msg-vencer" rows="4">Hola {nombre}, te recordamos que tu membresía de Gym Body Master está próxima a vencer el {fecha}. Acércate al gimnasio para renovar tu plan y continuar entrenando. ¡Te esperamos!</textarea>
+                            <button class="btn btn-secondary" type="button" onclick="usarPlantillaWhatsApp('vencer')">Usar esta plantilla</button>
+                        </div>
+                        <div class="form-group full" style="margin-bottom:15px;">
+                            <label>Plantilla 2: Membresía vencida (editable)</label>
+                            <textarea id="wa-msg-vencida" rows="4">Hola {nombre}, te informamos que tu membresía de Gym Body Master venció el {fecha}. Por favor acércate al gimnasio para renovar tu plan y reactivar tu acceso. ¡Te esperamos!</textarea>
+                            <button class="btn btn-secondary" type="button" onclick="usarPlantillaWhatsApp('vencida')">Usar esta plantilla</button>
+                        </div>
+                        <div class="form-group full" style="margin-bottom:15px;">
+                            <label>Mensaje que se enviará (puedes editarlo)</label>
+                            <textarea id="wa-msg" rows="4">Hola, te recordamos que tu membresía en Gym Body Master requiere renovación para mantener tu acceso activo.</textarea>
                         </div>
                         <button class="btn btn-primary" onclick="enviarWhatsAppDirecto()">Enviar Mensaje vía WhatsApp</button>
                     </div>
@@ -1253,6 +1257,11 @@
                         <option value="Transferencia / Nequi">Transferencia / Nequi</option>
                         <option value="Tarjeta">Tarjeta Débito/Crédito</option>
                     </select>
+                </div>
+                <div class="form-group full">
+                    <label>Comprobante de pago (imagen o PDF, opcional)</label>
+                    <input type="file" id="pagoComprobante" accept="image/*,application/pdf">
+                    <small style="color:var(--text-muted);">Adjunta el soporte de transferencia o pago. Máximo 5 MB.</small>
                 </div>
             </div>
             <div class="modal-buttons">
@@ -1649,11 +1658,9 @@
         function mostrarFormAuth(form) {
             document.getElementById('form-login').style.display = 'none';
             document.getElementById('form-register').style.display = 'none';
-            document.getElementById('form-forgot').style.display = 'none';
 
             if(form === 'login') document.getElementById('form-login').style.display = 'block';
             if(form === 'register') document.getElementById('form-register').style.display = 'block';
-            if(form === 'forgot') document.getElementById('form-forgot').style.display = 'block';
         }
 
         async function solicitarRegistroEmpleado() {
@@ -1731,25 +1738,38 @@
             return !!usuarioActual && (rol.includes('super') || rol.includes('administrador'));
         }
 
+        function esSuperAdministrador() {
+            const rol = String(usuarioActual && usuarioActual.rol || '').toLowerCase();
+            return !!usuarioActual && rol.includes('super');
+        }
+
         function requiereAdministrador() {
             if (esAdministrador()) return true;
             alert('Acceso restringido. Solo el administrador puede gestionar, aprobar, suspender o eliminar cuentas.');
             return false;
         }
 
+        function requiereSuperAdministrador() {
+            if (esSuperAdministrador()) return true;
+            alert('Acceso restringido. Esta sección solo está disponible para el Super Administrador.');
+            return false;
+        }
+
         function actualizarPermisosInterfaz() {
-            const nav = document.getElementById('nav-empleados');
-            const section = document.getElementById('section-empleados');
-            if (!nav || !section) return;
-            if (esAdministrador()) {
-                nav.style.display = '';
-                nav.querySelector('a').textContent = '🛡️ Gestión Personal';
-                section.style.display = '';
-            } else {
-                // Se muestra el acceso bloqueado, sin exponer la tabla ni sus acciones.
-                nav.style.display = '';
-                nav.querySelector('a').textContent = '🔒 Gestión Personal (Solo administrador)';
-                section.style.display = 'none';
+            const navEmpleados = document.getElementById('nav-empleados');
+            const sectionEmpleados = document.getElementById('section-empleados');
+            const navConfig = document.getElementById('nav-configuracion');
+            const sectionConfig = document.getElementById('section-configuracion');
+            if (navEmpleados && sectionEmpleados) {
+                navEmpleados.style.display = '';
+                navEmpleados.querySelector('a').textContent = esAdministrador()
+                    ? '🛡️ Gestión Personal'
+                    : '🔒 Gestión Personal (Solo administrador)';
+                sectionEmpleados.style.display = esAdministrador() ? '' : 'none';
+            }
+            if (navConfig && sectionConfig) {
+                navConfig.style.display = esSuperAdministrador() ? '' : 'none';
+                sectionConfig.style.display = esSuperAdministrador() ? '' : 'none';
             }
         }
 
@@ -1781,6 +1801,7 @@
 
         function switchSection(secId) {
             if (secId === 'empleados' && !requiereAdministrador()) return;
+            if (secId === 'configuracion' && !requiereSuperAdministrador()) return;
             const sections = document.querySelectorAll('.section-view, .full-width-view');
             sections.forEach(s => s.classList.remove('active-view'));
 
@@ -1800,7 +1821,7 @@
 
             if(secId === 'reportes') renderCharts();
             if(secId === 'empleados') renderEmpleados();
-            if(secId === 'configuracion') renderTablaLogs();
+            if(secId === 'configuracion' && esSuperAdministrador()) renderTablaLogs();
             if(secId === 'archivo-facturas') renderGridClientesArchivo();
             if(secId === 'informes') renderListaArchivosHistoricos();
         }
@@ -1809,8 +1830,10 @@
             document.getElementById(id).style.display = 'flex';
             if(id === 'modalMiembro') {
                 document.getElementById('fechaInicio').value = getTodayOffset(0);
+                cargarOpcionesPlanesModal();
             }
             if(id === 'modalPago') {
+                document.getElementById('pagoComprobante').value = '';
                 document.getElementById('pagoClienteInput').value = '';
                 document.getElementById('pagoAutocompleteList').style.display = 'none';
                 document.getElementById('pagoFechaPago').value = getTodayOffset(0);
@@ -1960,10 +1983,10 @@
             renderTablaPagos();
             renderGridClientesArchivo();
             renderTablaInventario();
-            renderEmpleados();
+            if (esAdministrador() && document.getElementById('section-empleados').classList.contains('active-view')) renderEmpleados();
             renderListaInformesGuardados();
             renderListaArchivosHistoricos();
-            renderTablaLogs();
+            if (esSuperAdministrador()) renderTablaLogs();
             cargarOpcionesPlanesModal();
             renderCharts();
         }
@@ -2102,7 +2125,7 @@
                     <td>${m.estado === 'Sin Pago Registrado' ? 'Pendiente de Pago' : m.fin}</td>
                     <td>${badge}</td>
                     <td>
-                        <button class="btn btn-primary" style="padding:3px 8px; font-size:0.75rem;" onclick="prepararWhatsAppModal('${m.celular}', '${m.nombre}')">💬 WhatsApp</button>
+                        <button class="btn btn-primary" style="padding:3px 8px; font-size:0.75rem;" onclick="prepararWhatsAppModal('${m.celular}', '${m.nombre}', '${m.estado === 'Vencida' ? 'vencida' : 'vencer'}', '${m.fin}')">💬 WhatsApp</button>
                         <button class="btn btn-danger" style="padding:3px 8px; font-size:0.75rem;" onclick="eliminarMiembro(${idx})">Eliminar</button>
                     </td>
                 `;
@@ -2111,12 +2134,27 @@
         }
 
         function cargarOpcionesPlanesModal() {
-            const planes = getDB('planes');
             const select = document.getElementById('planMiembro');
-            select.innerHTML = '';
+            if (!select) return;
+            let planes = getDB('planes');
+            if (!Array.isArray(planes) || planes.length === 0) {
+                planes = [
+                    { nombre: 'Pase Diario Individual', precio: 10000, dias: 1, desc: 'Acceso por un día completo a instalaciones' },
+                    { nombre: 'Mensualidad Gold', precio: 90000, dias: 30, desc: 'Acceso ilimitado cardio y musculación' },
+                    { nombre: 'Trimestre VIP', precio: 240000, dias: 90, desc: 'Ahorro + asesoría inicial' },
+                    { nombre: 'Anualidad Elite', precio: 850000, dias: 365, desc: 'Acceso total todo el año' }
+                ];
+                localDB.planes = planes;
+                syncToSupabase();
+            }
+            select.innerHTML = '<option value="">Seleccione un plan de membresía</option>';
             planes.forEach(p => {
-                select.innerHTML += `<option value="${p.nombre}">${p.nombre} - $${p.precio.toLocaleString()} (${p.dias} días)</option>`;
+                const option = document.createElement('option');
+                option.value = p.nombre;
+                option.textContent = `${p.nombre} - $${Number(p.precio || 0).toLocaleString('es-CO')} (${p.dias} días)`;
+                select.appendChild(option);
             });
+            select.disabled = false;
         }
 
         async function registrarMiembroCompleto() {
@@ -2127,8 +2165,8 @@
             const planNombre = document.getElementById('planMiembro').value;
             const fechaInicio = document.getElementById('fechaInicio').value;
 
-            if(!doc || !nombre || !celular || !fechaInicio) {
-                alert('Por favor complete todos los datos del formulario.');
+            if(!doc || !nombre || !celular || !fechaInicio || !planNombre) {
+                alert('Por favor complete todos los datos del formulario y seleccione un plan.');
                 return;
             }
 
@@ -2221,7 +2259,10 @@
                     <td style="color:var(--accent-green); font-weight:bold;">+$${p.monto.toLocaleString()}</td>
                     <td>${p.fechaPago || p.fecha}</td>
                     <td>${p.fechaFin || 'N/A'}</td>
-                    <td><button class="btn btn-primary" style="padding:2px 6px; font-size:0.7rem;" onclick="verReciboExistente('${p.id}')">🧾 Recibo / PDF</button></td>
+                    <td>
+                        <button class="btn btn-primary" style="padding:2px 6px; font-size:0.7rem;" onclick="verReciboExistente('${p.id}')">🧾 Recibo / PDF</button>
+                        ${p.comprobante && p.comprobante.contenido ? `<button class="btn btn-secondary" style="padding:2px 6px; font-size:0.7rem; margin-top:4px;" onclick="descargarComprobante('${p.id}')">📎 Soporte</button>` : '<small style="color:var(--text-muted)">Sin soporte</small>'}
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -2303,6 +2344,15 @@
             vista.scrollIntoView({ behavior: 'smooth' });
         }
 
+        function leerArchivoComoDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(new Error('No se pudo leer el comprobante seleccionado.'));
+                reader.readAsDataURL(file);
+            });
+        }
+
         async function guardarPagoTransaccion() {
             const cliente = document.getElementById('pagoClienteInput').value.trim();
             const concepto = document.getElementById('pagoConcepto').value.trim();
@@ -2310,19 +2360,36 @@
             const metodo = document.getElementById('pagoMetodo').value;
             const fechaPago = document.getElementById('pagoFechaPago').value;
             const fechaFin = document.getElementById('pagoFechaFin').value;
+            const archivoComprobante = document.getElementById('pagoComprobante').files[0];
 
             if(!cliente || !concepto || isNaN(monto) || !fechaPago || !fechaFin) {
                 alert('Ingrese la información completa del pago incluyendo las fechas.');
                 return;
             }
 
-            const idTx = 'TX-' + Math.floor(1000 + Math.random() * 9000);
+            if (archivoComprobante && archivoComprobante.size > 5 * 1024 * 1024) {
+                alert('El comprobante supera el límite de 5 MB. Seleccione un archivo más pequeño.');
+                return;
+            }
+            let comprobante = null;
+            try {
+                if (archivoComprobante) {
+                    comprobante = {
+                        nombre: archivoComprobante.name,
+                        tipo: archivoComprobante.type || 'application/octet-stream',
+                        contenido: await leerArchivoComoDataURL(archivoComprobante)
+                    };
+                }
+            } catch (error) {
+                alert(error.message);
+                return;
+            }
 
+            const idTx = 'TX-' + Date.now();
             const pagos = getDB('pagos');
             pagos.push({
-                id: idTx,
-                cliente, concepto, metodo, monto,
-                fechaPago, fechaFin, fecha: fechaPago
+                id: idTx, cliente, concepto, metodo, monto,
+                fechaPago, fechaFin, fecha: fechaPago, comprobante
             });
             await setDB('pagos', pagos);
 
@@ -2341,6 +2408,21 @@
             actualizarTodoElSistema();
 
             mostrarReciboGenerado(idTx, cliente, celularSocio, concepto, monto, metodo, fechaPago, fechaFin);
+        }
+
+        function descargarComprobante(idTx) {
+            const pago = getDB('pagos').find(p => String(p.id) === String(idTx))
+                || getDB('historico_cierres').flatMap(h => h.transacciones || []).find(p => String(p.id) === String(idTx));
+            if (!pago || !pago.comprobante || !pago.comprobante.contenido) {
+                alert('Este pago no tiene un comprobante adjunto.');
+                return;
+            }
+            const a = document.createElement('a');
+            a.href = pago.comprobante.contenido;
+            a.download = pago.comprobante.nombre || `Comprobante_${idTx}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
         }
 
         function mostrarReciboGenerado(id, cliente, celular, concepto, monto, metodo, fechaPago, fechaFin) {
@@ -2574,6 +2656,7 @@
         }
 
         async function procesarCambioPass() {
+            if (!requiereSuperAdministrador()) return;
             const email = document.getElementById('email-recuperacion').value.trim();
             const nuevaPass = document.getElementById('nueva-pass').value.trim();
 
@@ -2660,19 +2743,71 @@
         }
 
         function exportarInformeWord() {
-            const contenido = document.getElementById('contenido-informe-imprimir').innerHTML;
-            const blob = new Blob(['\ufeff' + contenido], { type: 'application/msword' });
+            const area = document.getElementById('contenido-informe-imprimir');
+            if (!area || !area.innerText.trim()) {
+                alert('Primero genere el informe semanal.');
+                return;
+            }
+            const documento = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Informe Gym Body Master</title>
+                <style>body{font-family:Arial,sans-serif;color:#111;padding:24px}table{width:100%;border-collapse:collapse}
+                td,th{border:1px solid #999;padding:8px;text-align:left}h2,h4{color:#9a5b00}</style></head>
+                <body>${area.innerHTML}</body></html>`;
+            const blob = new Blob(['\\ufeff' + documento], { type: 'application/msword;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = `Informe_Semanal_GymBodyMaster_${new Date().toISOString().split('T')[0]}.doc`;
+            document.body.appendChild(a);
             a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
         }
 
-        function prepararWhatsAppModal(cel, nombre) {
+        async function exportarInformePDF() {
+            const area = document.getElementById('contenido-informe-imprimir');
+            if (!area || !area.innerText.trim() || !window.jspdf || !window.html2canvas) {
+                alert('Genere el informe y verifique que las librerías de PDF estén cargadas.');
+                return;
+            }
+            try {
+                const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+                const img = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pageWidth = pdf.internal.pageSize.getWidth() - 20;
+                const pageHeight = pdf.internal.pageSize.getHeight() - 20;
+                const imageHeight = canvas.height * pageWidth / canvas.width;
+                let offset = 0;
+                pdf.addImage(img, 'PNG', 10, 10, pageWidth, imageHeight);
+                offset += pageHeight;
+                while (offset < imageHeight) {
+                    pdf.addPage();
+                    pdf.addImage(img, 'PNG', 10, 10 - offset, pageWidth, imageHeight);
+                    offset += pageHeight;
+                }
+                pdf.save(`Informe_Semanal_GymBodyMaster_${new Date().toISOString().split('T')[0]}.pdf`);
+            } catch (error) {
+                console.error('Error exportando informe PDF:', error);
+                alert('No se pudo generar el PDF. Intente nuevamente o use la descarga en Word.');
+            }
+        }
+
+        function usarPlantillaWhatsApp(tipo) {
+            const nombre = window.nombreWhatsAppActual || 'socio';
+            const fecha = window.fechaWhatsAppActual || 'la fecha indicada';
+            const id = tipo === 'vencida' ? 'wa-msg-vencida' : 'wa-msg-vencer';
+            const plantilla = document.getElementById(id).value;
+            document.getElementById('wa-msg').value = plantilla
+                .replaceAll('{nombre}', nombre)
+                .replaceAll('{fecha}', fecha);
+        }
+
+        function prepararWhatsAppModal(cel, nombre, tipo = 'vencer', fecha = '') {
             switchSection('whatsapp');
             document.getElementById('wa-phone').value = cel;
-            document.getElementById('wa-msg').value = `Hola ${nombre}, te saludamos de Gym Body Master. Te recordamos que tu membresía está próxima a vencer. ¡Te esperamos para renovar!`;
+            window.nombreWhatsAppActual = nombre;
+            window.fechaWhatsAppActual = fecha;
+            usarPlantillaWhatsApp(tipo);
         }
 
         function enviarWhatsAppDirecto() {
@@ -2684,7 +2819,8 @@
                 return;
             }
 
-            const cleanPhone = phone.replace(/\D/g, '');
+            let cleanPhone = phone.replace(/\D/g, '');
+            if (cleanPhone.startsWith('57')) cleanPhone = cleanPhone.slice(2);
             const url = `https://api.whatsapp.com/send?phone=57${cleanPhone}&text=${encodeURIComponent(msg)}`;
             window.open(url, '_blank');
         }
