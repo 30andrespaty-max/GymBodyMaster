@@ -1433,11 +1433,18 @@
 
         async function initDB() {
             initTheme();
-            setStatus('Conectando con Supabase...');
+            setStatus('Preparando sistema limpio...');
+
+            // Se conservan únicamente las credenciales del superadministrador titular.
+            // Todos los registros operativos y las demás cuentas quedan vacíos.
+            const coleccionesVacias = [
+                'miembros', 'pagos_archivados', 'planes', 'pagos',
+                'inventario', 'informes', 'logs', 'historico_cierres'
+            ];
 
             try {
                 if (!window.supabase || typeof window.supabase.createClient !== 'function') {
-                    throw new Error('No se pudo cargar la librería de Supabase. Revisa la conexión a internet o el script CDN.');
+                    throw new Error('No se pudo cargar la librería de Supabase.');
                 }
 
                 const { data, error } = await _supabase
@@ -1448,31 +1455,16 @@
 
                 if (error) throw error;
 
-                // Recuperar la información existente sin perder módulos que falten.
-                if (data && data.content && typeof data.content === 'object') {
-                    localDB = { ...localDB, ...data.content };
-                }
+                const empleadosAnteriores = Array.isArray(data?.content?.empleados)
+                    ? data.content.empleados
+                    : [];
 
-                // Asegurar que todas las colecciones existan, aunque el JSON esté incompleto.
-                ['miembros', 'pagos_archivados', 'planes', 'pagos', 'inventario', 'informes', 'logs', 'historico_cierres', 'empleados']
-                    .forEach(key => {
-                        if (!Array.isArray(localDB[key])) localDB[key] = [];
-                    });
-
-                if (localDB.planes.length === 0) {
-                    localDB.planes = [
-                        { nombre: 'Pase Diario Individual', precio: 10000, dias: 1, desc: 'Acceso por un día completo a instalaciones' },
-                        { nombre: 'Mensualidad Gold', precio: 90000, dias: 30, desc: 'Acceso ilimitado cardio y musculación' },
-                        { nombre: 'Trimestre VIP', precio: 240000, dias: 90, desc: 'Ahorro del 15% + asesoría inicial' },
-                        { nombre: 'Anualidad Elite', precio: 850000, dias: 365, desc: 'Acceso total todo el año con casillero' }
-                    ];
-                }
-
-                // Restaurar/normalizar la cuenta predeterminada sin borrar los demás empleados.
-                const adminIndex = localDB.empleados.findIndex(e =>
+                // Mantener la cuenta titular existente, si la hay, para no bloquear el acceso.
+                const titular = empleadosAnteriores.find(e =>
+                    /super|propietario|titular/i.test(String(e.rol || ''))
+                ) || empleadosAnteriores.find(e =>
                     String(e.usuario || '').trim().toLowerCase() === 'gymbodymaster'
-                );
-                const adminPredeterminado = {
+                ) || {
                     usuario: 'gymbodymaster',
                     email: 'admin@bodymaster.com',
                     rol: 'Administrador Principal (Super)',
@@ -1480,39 +1472,41 @@
                     estado: 'Activo'
                 };
 
-                if (adminIndex === -1) {
-                    localDB.empleados.unshift(adminPredeterminado);
-                } else {
-                    const adminExistente = localDB.empleados[adminIndex];
-                    localDB.empleados[adminIndex] = {
-                        ...adminExistente,
-                        usuario: 'gymbodymaster',
-                        email: adminExistente.email || adminPredeterminado.email,
+                localDB = {
+                    miembros: [],
+                    pagos_archivados: [],
+                    planes: [],
+                    pagos: [],
+                    inventario: [],
+                    informes: [],
+                    logs: [],
+                    historico_cierres: [],
+                    empleados: [{
+                        ...titular,
                         rol: 'Administrador Principal (Super)',
-                        // No sobrescribir una contraseña que ya haya sido cambiada.
-                        pass: adminExistente.pass || adminPredeterminado.pass,
                         estado: 'Activo'
-                    };
-                }
+                    }]
+                };
 
-                // Crear o actualizar el registro en la nube y comprobar el resultado.
                 const guardado = await syncToSupabase();
                 if (!guardado) {
-                    setStatus('Supabase conectado, pero no se pudo guardar. Revisa las políticas RLS de tu_tabla.');
+                    setStatus('No se pudo limpiar la base de datos en Supabase. Revisa las políticas RLS de tu_tabla.');
+                } else {
+                    setStatus('Sistema limpio y listo para su utilización definitiva.');
                 }
             } catch (err) {
-                console.error('Error inicializando GYM BODY MASTER:', err);
-                setStatus('Error de Supabase: ' + (err.message || 'No se pudo leer la base de datos'));
+                console.error('Error preparando GYM BODY MASTER:', err);
+                setStatus('No se pudo limpiar Supabase: ' + (err.message || 'Error de conexión'));
 
-                // Modo local de emergencia. No modifica los datos remotos si la lectura falló.
-                ['miembros', 'pagos_archivados', 'planes', 'pagos', 'inventario', 'informes', 'logs', 'historico_cierres', 'empleados']
-                    .forEach(key => { if (!Array.isArray(localDB[key])) localDB[key] = []; });
-                if (!localDB.empleados.some(e => String(e.usuario || '').trim().toLowerCase() === 'gymbodymaster')) {
-                    localDB.empleados.unshift({
-                        usuario: 'gymbodymaster', email: 'admin@bodymaster.com',
-                        rol: 'Administrador Principal (Super)', pass: 'master123', estado: 'Activo'
-                    });
-                }
+                // No presentar datos antiguos ni inventar registros si la nube no responde.
+                coleccionesVacias.forEach(key => { localDB[key] = []; });
+                localDB.empleados = [{
+                    usuario: 'gymbodymaster',
+                    email: 'admin@bodymaster.com',
+                    rol: 'Administrador Principal (Super)',
+                    pass: 'master123',
+                    estado: 'Activo'
+                }];
             }
 
             verificarYArchivarPeriodosPasados();
@@ -1527,17 +1521,15 @@
                 })
                 .subscribe(status => {
                     if (status === 'SUBSCRIBED') {
-                        setStatus('Conectado · Sincronización en tiempo real activa');
+                        setStatus('Sistema limpio · Sincronización en tiempo real activa');
                     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-                        // El canal Realtime puede no estar habilitado en Supabase aunque
-                        // la conexión REST (lectura/guardado) funcione correctamente.
                         console.warn('Supabase Realtime no disponible:', status);
-                        setStatus('Base de datos conectada · Tiempo real no disponible (revisa Realtime en Supabase)');
+                        setStatus('Sistema limpio · Tiempo real no disponible');
                     }
                 });
         }
 
-        async function syncToSupabase() {
+                async function syncToSupabase() {
             try {
                 const { error } = await _supabase
                     .from('tu_tabla')
@@ -2242,16 +2234,7 @@
             const select = document.getElementById('planMiembro');
             if (!select) return;
             let planes = getDB('planes');
-            if (!Array.isArray(planes) || planes.length === 0) {
-                planes = [
-                    { nombre: 'Pase Diario Individual', precio: 10000, dias: 1, desc: 'Acceso por un día completo a instalaciones' },
-                    { nombre: 'Mensualidad Gold', precio: 90000, dias: 30, desc: 'Acceso ilimitado cardio y musculación' },
-                    { nombre: 'Trimestre VIP', precio: 240000, dias: 90, desc: 'Ahorro + asesoría inicial' },
-                    { nombre: 'Anualidad Elite', precio: 850000, dias: 365, desc: 'Acceso total todo el año' }
-                ];
-                localDB.planes = planes;
-                syncToSupabase();
-            }
+            if (!Array.isArray(planes)) planes = [];
             select.innerHTML = '<option value="">Seleccione un plan de membresía</option>';
             planes.forEach(p => {
                 const option = document.createElement('option');
@@ -2735,13 +2718,11 @@
                     `;
                 } else if (e.estado === 'Activo') {
                     botonesAccion = `
-                        <button class="btn btn-danger" style="padding:3px 8px; font-size:0.75rem;" onclick="cambiarEstadoEmpleado(${idx}, 'Inactivo')">Dar de Baja</button>
-                        <button class="btn btn-secondary" style="padding:3px 8px; font-size:0.75rem;" onclick="eliminarEmpleadoPermanente(${idx})">Eliminar</button>
+                        <button class="btn btn-danger" style="padding:3px 8px; font-size:0.75rem;" onclick="cambiarEstadoEmpleado(${idx}, 'Inactivo')">Desactivar</button>
                     `;
                 } else {
                     botonesAccion = `
                         <button class="btn btn-success" style="padding:3px 8px; font-size:0.75rem;" onclick="cambiarEstadoEmpleado(${idx}, 'Activo')">Reactivar</button>
-                        <button class="btn btn-secondary" style="padding:3px 8px; font-size:0.75rem;" onclick="eliminarEmpleadoPermanente(${idx})">Eliminar</button>
                     `;
                 }
 
