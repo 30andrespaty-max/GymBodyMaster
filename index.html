@@ -1431,115 +1431,88 @@
             renderIncomeChart();
         }
 
+        let dbInicializada = false;
+        let canalRealtime = null;
+
         async function initDB() {
             initTheme();
-            setStatus('Preparando sistema limpio...');
-
-            // Se conservan únicamente las credenciales del superadministrador titular.
-            // Todos los registros operativos y las demás cuentas quedan vacíos.
-            const coleccionesVacias = [
-                'miembros', 'pagos_archivados', 'planes', 'pagos',
-                'inventario', 'informes', 'logs', 'historico_cierres'
-            ];
-
+            setStatus('Conectando con la base de datos compartida...');
             try {
                 if (!window.supabase || typeof window.supabase.createClient !== 'function') {
                     throw new Error('No se pudo cargar la librería de Supabase.');
                 }
-
                 const { data, error } = await _supabase
                     .from('tu_tabla')
                     .select('id, content')
                     .eq('id', 1)
                     .maybeSingle();
-
                 if (error) throw error;
 
-                const empleadosAnteriores = Array.isArray(data?.content?.empleados)
-                    ? data.content.empleados
-                    : [];
-
-                // Mantener la cuenta titular existente, si la hay, para no bloquear el acceso.
-                const titular = empleadosAnteriores.find(e =>
-                    /super|propietario|titular/i.test(String(e.rol || ''))
-                ) || empleadosAnteriores.find(e =>
-                    String(e.usuario || '').trim().toLowerCase() === 'gymbodymaster'
-                ) || {
-                    usuario: 'gymbodymaster',
-                    email: 'admin@bodymaster.com',
-                    rol: 'Administrador Principal (Super)',
-                    pass: 'master123',
-                    estado: 'Activo'
-                };
-
-                localDB = {
-                    miembros: [],
-                    pagos_archivados: [],
-                    planes: [],
-                    pagos: [],
-                    inventario: [],
-                    informes: [],
-                    logs: [],
-                    historico_cierres: [],
-                    empleados: [{
-                        ...titular,
-                        rol: 'Administrador Principal (Super)',
-                        estado: 'Activo'
-                    }]
-                };
-
-                const guardado = await syncToSupabase();
-                if (!guardado) {
-                    setStatus('No se pudo limpiar la base de datos en Supabase. Revisa las políticas RLS de tu_tabla.');
+                if (data && data.content && typeof data.content === 'object') {
+                    // La nube es la fuente de verdad: nunca vaciar ni reemplazar datos al abrir.
+                    localDB = { ...localDB, ...data.content };
+                    ['miembros','pagos_archivados','planes','pagos','inventario','informes','logs','historico_cierres','empleados']
+                        .forEach(k => { if (!Array.isArray(localDB[k])) localDB[k] = []; });
                 } else {
-                    setStatus('Sistema limpio y listo para su utilización definitiva.');
+                    // Solo crear la estructura inicial cuando la tabla realmente está vacía.
+                    localDB = {
+                        miembros: [], pagos_archivados: [], planes: [], pagos: [], inventario: [],
+                        informes: [], logs: [], historico_cierres: [],
+                        empleados: [{ usuario:'gymbodymaster', email:'admin@bodymaster.com',
+                            rol:'Administrador Principal (Super)', pass:'master123', estado:'Activo' }]
+                    };
+                    const { error: insertError } = await _supabase.from('tu_tabla').insert({ id: 1, content: localDB });
+                    if (insertError && insertError.code !== '23505') throw insertError;
+                    if (insertError?.code === '23505') {
+                        const retry = await _supabase.from('tu_tabla').select('id, content').eq('id',1).single();
+                        if (retry.error) throw retry.error;
+                        localDB = { ...localDB, ...(retry.data.content || {}) };
+                    }
                 }
+                dbInicializada = true;
+                setStatus('Conectado · Datos compartidos cargados desde Supabase');
+
+                if (canalRealtime) await _supabase.removeChannel(canalRealtime);
+                canalRealtime = _supabase.channel('gbm-datos-compartidos')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'tu_tabla', filter: 'id=eq.1' }, payload => {
+                        if (payload.new?.content) {
+                            localDB = { ...localDB, ...payload.new.content };
+                            if (usuarioActual) actualizarTodoElSistema();
+                        }
+                    })
+                    .subscribe(status => {
+                        if (status === 'SUBSCRIBED') setStatus('Conectado · Sincronización entre dispositivos activa');
+                        else if (['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status))
+                            setStatus('Datos cargados · Realtime no disponible; verifica la configuración');
+                    });
+
+                verificarYArchivarPeriodosPasados();
             } catch (err) {
-                console.error('Error preparando GYM BODY MASTER:', err);
-                setStatus('No se pudo limpiar Supabase: ' + (err.message || 'Error de conexión'));
-
-                // No presentar datos antiguos ni inventar registros si la nube no responde.
-                coleccionesVacias.forEach(key => { localDB[key] = []; });
-                localDB.empleados = [{
-                    usuario: 'gymbodymaster',
-                    email: 'admin@bodymaster.com',
-                    rol: 'Administrador Principal (Super)',
-                    pass: 'master123',
-                    estado: 'Activo'
-                }];
+                console.error('Error conectando con GYM BODY MASTER:', err);
+                dbInicializada = false;
+                setStatus('ERROR DE NUBE: ' + (err.message || 'No se pudo cargar la información. No se guardarán cambios.'));
+                alert('No fue posible conectar con la base de datos compartida. Recarga la página cuando se restablezca la conexión. No trabajes sin conexión para evitar perder información.');
             }
-
-            verificarYArchivarPeriodosPasados();
-
-            _supabase
-                .channel('public:tu_tabla')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'tu_tabla' }, payload => {
-                    if (payload.new && payload.new.content) {
-                        localDB = { ...localDB, ...payload.new.content };
-                        if (usuarioActual) actualizarTodoElSistema();
-                    }
-                })
-                .subscribe(status => {
-                    if (status === 'SUBSCRIBED') {
-                        setStatus('Sistema limpio · Sincronización en tiempo real activa');
-                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-                        console.warn('Supabase Realtime no disponible:', status);
-                        setStatus('Sistema limpio · Tiempo real no disponible');
-                    }
-                });
         }
 
-                async function syncToSupabase() {
+        // Actualiza una colección de forma atómica en el servidor, sin sobrescribir
+        // las demás colecciones que otro usuario haya modificado al mismo tiempo.
+        async function syncToSupabase(key, value) {
+            if (!dbInicializada) {
+                setStatus('Sin guardar: la conexión con la base de datos no está lista.');
+                return false;
+            }
             try {
-                const { error } = await _supabase
-                    .from('tu_tabla')
-                    .upsert({ id: 1, content: localDB }, { onConflict: 'id' });
+                const { error } = await _supabase.rpc('gbm_update_collection', {
+                    p_key: key,
+                    p_value: value
+                });
                 if (error) throw error;
-                setStatus('Conectado · Sincronizado en la nube (tu_tabla)');
+                setStatus('Conectado · Cambios guardados en la nube');
                 return true;
             } catch (err) {
                 console.error('Error guardando en Supabase:', err);
-                setStatus('No se pudo guardar en Supabase: ' + (err.message || 'Revisa permisos RLS'));
+                setStatus('ERROR al guardar: ' + (err.message || 'Verifica la función RPC y permisos'));
                 return false;
             }
         }
@@ -1560,8 +1533,12 @@
         }
 
         async function setDB(key, data) {
+            if (!dbInicializada) { setStatus('No se guardó: la nube no está conectada.'); return false; }
+            const anterior = localDB[key];
             localDB[key] = data;
-            await syncToSupabase();
+            const guardado = await syncToSupabase(key, data);
+            if (!guardado) localDB[key] = anterior;
+            return guardado;
         }
 
         function getTodayOffset(days) {
@@ -1616,7 +1593,7 @@
             // Mostrar el registro de inmediato; el guardado en nube se intenta después.
             localDB.logs = logs;
             renderTablaLogs();
-            const guardado = await syncToSupabase();
+            const guardado = await syncToSupabase('logs', logs);
             if (!guardado) {
                 console.error('El acceso quedó visible en esta sesión, pero Supabase no confirmó el guardado.');
             }
@@ -1710,7 +1687,8 @@
 
             localDB.pagos = pagosPendientesActuales;
             localDB.historico_cierres = historico;
-            syncToSupabase();
+            syncToSupabase('pagos', pagosPendientesActuales);
+            syncToSupabase('historico_cierres', historico);
         }
 
         function getNumeroSemana(d) {
