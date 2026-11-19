@@ -1382,51 +1382,122 @@
 
         async function initDB() {
             initTheme();
-            
+            setStatus('Conectando con Supabase...');
+
             try {
-                const { data, error } = await _supabase.from('tu_tabla').select('*').eq('id', 1).single();
-                
-                if (data && data.content && data.content.empleados && data.content.empleados.length > 0) {
-                    localDB = data.content;
-                } else {
+                if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+                    throw new Error('No se pudo cargar la librería de Supabase. Revisa la conexión a internet o el script CDN.');
+                }
+
+                const { data, error } = await _supabase
+                    .from('tu_tabla')
+                    .select('id, content')
+                    .eq('id', 1)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                // Recuperar la información existente sin perder módulos que falten.
+                if (data && data.content && typeof data.content === 'object') {
+                    localDB = { ...localDB, ...data.content };
+                }
+
+                // Asegurar que todas las colecciones existan, aunque el JSON esté incompleto.
+                ['miembros', 'planes', 'pagos', 'inventario', 'informes', 'logs', 'historico_cierres', 'empleados']
+                    .forEach(key => {
+                        if (!Array.isArray(localDB[key])) localDB[key] = [];
+                    });
+
+                if (localDB.planes.length === 0) {
                     localDB.planes = [
                         { nombre: 'Pase Diario Individual', precio: 10000, dias: 1, desc: 'Acceso por un día completo a instalaciones' },
                         { nombre: 'Mensualidad Gold', precio: 90000, dias: 30, desc: 'Acceso ilimitado cardio y musculación' },
                         { nombre: 'Trimestre VIP', precio: 240000, dias: 90, desc: 'Ahorro del 15% + asesoría inicial' },
                         { nombre: 'Anualidad Elite', precio: 850000, dias: 365, desc: 'Acceso total todo el año con casillero' }
                     ];
-                    localDB.empleados = [
-                        { usuario: 'gymbodymaster', email: 'admin@bodymaster.com', rol: 'Administrador Principal (Super)', pass: 'master123', estado: 'Activo' },
-                        { usuario: 'cajero1', email: 'cajero@bodymaster.com', rol: 'Empleado / Cajero', pass: '12345', estado: 'Activo' }
-                    ];
-                    await syncToSupabase();
+                }
+
+                // Restaurar/normalizar la cuenta predeterminada sin borrar los demás empleados.
+                const adminIndex = localDB.empleados.findIndex(e =>
+                    String(e.usuario || '').trim().toLowerCase() === 'gymbodymaster'
+                );
+                const adminPredeterminado = {
+                    usuario: 'gymbodymaster',
+                    email: 'admin@bodymaster.com',
+                    rol: 'Administrador Principal (Super)',
+                    pass: 'master123',
+                    estado: 'Activo'
+                };
+
+                if (adminIndex === -1) {
+                    localDB.empleados.unshift(adminPredeterminado);
+                } else {
+                    const adminExistente = localDB.empleados[adminIndex];
+                    localDB.empleados[adminIndex] = {
+                        ...adminExistente,
+                        usuario: 'gymbodymaster',
+                        email: adminExistente.email || adminPredeterminado.email,
+                        rol: 'Administrador Principal (Super)',
+                        // No sobrescribir una contraseña que ya haya sido cambiada.
+                        pass: adminExistente.pass || adminPredeterminado.pass,
+                        estado: 'Activo'
+                    };
+                }
+
+                // Crear o actualizar el registro en la nube y comprobar el resultado.
+                const guardado = await syncToSupabase();
+                if (!guardado) {
+                    setStatus('Supabase conectado, pero no se pudo guardar. Revisa las políticas RLS de tu_tabla.');
                 }
             } catch (err) {
-                console.warn('Usando valores por defecto locales ante error de Supabase', err);
-                localDB.empleados = [
-                    { usuario: 'gymbodymaster', email: 'admin@bodymaster.com', rol: 'Administrador Principal (Super)', pass: 'master123', estado: 'Activo' }
-                ];
+                console.error('Error inicializando GYM BODY MASTER:', err);
+                setStatus('Error de Supabase: ' + (err.message || 'No se pudo leer la base de datos'));
+
+                // Modo local de emergencia. No modifica los datos remotos si la lectura falló.
+                ['miembros', 'planes', 'pagos', 'inventario', 'informes', 'logs', 'historico_cierres', 'empleados']
+                    .forEach(key => { if (!Array.isArray(localDB[key])) localDB[key] = []; });
+                if (!localDB.empleados.some(e => String(e.usuario || '').trim().toLowerCase() === 'gymbodymaster')) {
+                    localDB.empleados.unshift({
+                        usuario: 'gymbodymaster', email: 'admin@bodymaster.com',
+                        rol: 'Administrador Principal (Super)', pass: 'master123', estado: 'Activo'
+                    });
+                }
             }
 
             verificarYArchivarPeriodosPasados();
-            
+
             _supabase
-              .channel('public:tu_tabla')
-              .on('postgres_changes', { event: '*', schema: 'public', table: 'tu_tabla' }, payload => {
-                  if (payload.new && payload.new.content) {
-                      localDB = payload.new.content;
-                      if (usuarioActual) actualizarTodoElSistema();
-                  }
-              })
-              .subscribe();
+                .channel('public:tu_tabla')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'tu_tabla' }, payload => {
+                    if (payload.new && payload.new.content) {
+                        localDB = { ...localDB, ...payload.new.content };
+                        if (usuarioActual) actualizarTodoElSistema();
+                    }
+                })
+                .subscribe(status => {
+                    if (status === 'SUBSCRIBED') {
+                        setStatus('Conectado · Sincronización en tiempo real activa');
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                        // El canal Realtime puede no estar habilitado en Supabase aunque
+                        // la conexión REST (lectura/guardado) funcione correctamente.
+                        console.warn('Supabase Realtime no disponible:', status);
+                        setStatus('Base de datos conectada · Tiempo real no disponible (revisa Realtime en Supabase)');
+                    }
+                });
         }
 
         async function syncToSupabase() {
             try {
-                await _supabase.from('tu_tabla').upsert({ id: 1, content: localDB });
+                const { error } = await _supabase
+                    .from('tu_tabla')
+                    .upsert({ id: 1, content: localDB }, { onConflict: 'id' });
+                if (error) throw error;
                 setStatus('Conectado · Sincronizado en la nube (tu_tabla)');
+                return true;
             } catch (err) {
-                setStatus('Sin conexión con Supabase');
+                console.error('Error guardando en Supabase:', err);
+                setStatus('No se pudo guardar en Supabase: ' + (err.message || 'Revisa permisos RLS'));
+                return false;
             }
         }
 
@@ -1646,11 +1717,44 @@
             }
 
             usuarioActual = usuarioValido;
-            await registrarAuditoriaAcceso(usuarioValido);
+            try {
+                await registrarAuditoriaAcceso(usuarioValido);
+            } catch (err) {
+                // La auditoría no debe bloquear el acceso de un usuario válido.
+                console.error('No se pudo registrar la auditoría de acceso:', err);
+            }
             iniciarApp();
         }
 
+        function esAdministrador() {
+            const rol = String(usuarioActual && usuarioActual.rol || '').toLowerCase();
+            return !!usuarioActual && (rol.includes('super') || rol.includes('administrador'));
+        }
+
+        function requiereAdministrador() {
+            if (esAdministrador()) return true;
+            alert('Acceso restringido. Solo el administrador puede gestionar, aprobar, suspender o eliminar cuentas.');
+            return false;
+        }
+
+        function actualizarPermisosInterfaz() {
+            const nav = document.getElementById('nav-empleados');
+            const section = document.getElementById('section-empleados');
+            if (!nav || !section) return;
+            if (esAdministrador()) {
+                nav.style.display = '';
+                nav.querySelector('a').textContent = '🛡️ Gestión Personal';
+                section.style.display = '';
+            } else {
+                // Se muestra el acceso bloqueado, sin exponer la tabla ni sus acciones.
+                nav.style.display = '';
+                nav.querySelector('a').textContent = '🔒 Gestión Personal (Solo administrador)';
+                section.style.display = 'none';
+            }
+        }
+
         function iniciarApp() {
+            actualizarPermisosInterfaz();
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-layout').style.display = 'block';
             document.getElementById('user-role-display').innerText = `${usuarioActual.usuario} (${usuarioActual.rol})`;
@@ -1676,6 +1780,7 @@
         }
 
         function switchSection(secId) {
+            if (secId === 'empleados' && !requiereAdministrador()) return;
             const sections = document.querySelectorAll('.section-view, .full-width-view');
             sections.forEach(s => s.classList.remove('active-view'));
 
@@ -2382,6 +2487,7 @@
         }
 
         function renderEmpleados() {
+            if (!requiereAdministrador()) return;
             const emp = getDB('empleados');
             const tbody = document.getElementById('tabla-empleados-body');
             if(!tbody) return;
@@ -2430,6 +2536,7 @@
         }
 
         async function aprobarEmpleado(idx) {
+            if (!requiereAdministrador()) return;
             const emp = getDB('empleados');
             emp[idx].estado = 'Activo';
             await setDB('empleados', emp);
@@ -2438,6 +2545,7 @@
         }
 
         async function rechazarEmpleado(idx) {
+            if (!requiereAdministrador()) return;
             if (confirm('¿Está seguro de rechazar la solicitud de este empleado?')) {
                 const emp = getDB('empleados');
                 emp.splice(idx, 1);
@@ -2448,6 +2556,7 @@
         }
 
         async function cambiarEstadoEmpleado(idx, nuevoEstado) {
+            if (!requiereAdministrador()) return;
             const emp = getDB('empleados');
             emp[idx].estado = nuevoEstado;
             await setDB('empleados', emp);
@@ -2455,6 +2564,7 @@
         }
 
         async function eliminarEmpleadoPermanente(idx) {
+            if (!requiereAdministrador()) return;
             if (confirm('¿Desea eliminar permanentemente a este empleado?')) {
                 const emp = getDB('empleados');
                 emp.splice(idx, 1);
